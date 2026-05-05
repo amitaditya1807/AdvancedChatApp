@@ -1,0 +1,11 @@
+auth service -  dotnet run --urls https://localhost:7001
+chat service - dotnet run --urls https://localhost:5000
+gateway      - dotnet run --urls https://localhost:7000   
+
+
+browser - 
+https://localhost:7000/auth/google/login
+
+or
+https://localhost:7001/auth/google/login
+curl -k -H "Authorization: Bearer YOUR_TOKEN" https://localhost:5000/secure
