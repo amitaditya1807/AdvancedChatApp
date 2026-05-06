@@ -1,8 +1,83 @@
 <!DOCTYPE html>
 <html>
+<head>
+    <title>Auth Microservice Demo</title>
+</head>
 <body>
-    <a href="https://localhost:7001/login">
-        <button>Login with Google</button>
-    </a>
+
+<h2>Auth Microservice Demo</h2>
+
+<button onclick="login()">Login with Google</button>
+<br><br>
+
+<button onclick="callSecure()">Call Secure API</button>
+
+<br><br>
+<button onclick="logout()">Logout</button>
+
+<pre id="output"></pre>
+
+<script>
+
+// 🧠 STEP 1: Extract token from URL after redirect
+const params = new URLSearchParams(window.location.search);
+const urlToken = params.get("token");
+
+if (urlToken) {
+    localStorage.setItem("jwt", urlToken);
+
+    // Clean URL (remove token from address bar)
+    window.history.replaceState({}, document.title, "/");
+}
+
+// 🧠 STEP 2: Load token from storage
+let token = localStorage.getItem("jwt") || "";
+
+// 🔐 LOGIN
+function login() {
+    window.location.href = "https://localhost:7000/auth/google/login";
+}
+
+// 🔒 CALL SECURE API
+function callSecure() {
+    if (!token) {
+        document.getElementById("output").innerText = "❌ Please login first";
+        return;
+    }
+
+    fetch("https://localhost:7000/chat/secure", {
+        method: "GET",
+        headers: {
+            "Authorization": "Bearer " + token
+        }
+    })
+    .then(async res => {
+        const text = await res.text();
+
+        if (!res.ok) {
+            throw new Error("Status: " + res.status + "\n" + text);
+        }
+
+        return JSON.parse(text);
+    })
+    .then(data => {
+        document.getElementById("output").innerText =
+            JSON.stringify(data, null, 2);
+    })
+    .catch(err => {
+        document.getElementById("output").innerText =
+            "❌ ERROR:\n" + err;
+    });
+}
+
+// 🚪 LOGOUT
+function logout() {
+    localStorage.removeItem("jwt");
+    token = "";
+    document.getElementById("output").innerText = "👋 Logged out";
+}
+
+</script>
+
 </body>
 </html>
