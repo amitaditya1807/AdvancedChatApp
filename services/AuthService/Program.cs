@@ -9,10 +9,11 @@ using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// 🔥 Load ENV (Render)
+// =====================
+// CONFIG
+// =====================
 builder.Configuration.AddEnvironmentVariables();
 
-// 🔐 Read config (USE ':' NOT '__')
 var jwtKey = builder.Configuration["Jwt:Key"];
 var jwtIssuer = builder.Configuration["Jwt:Issuer"];
 var jwtAudience = builder.Configuration["Jwt:Audience"];
@@ -20,14 +21,23 @@ var jwtAudience = builder.Configuration["Jwt:Audience"];
 var googleClientId = builder.Configuration["Authentication:Google:ClientId"];
 var googleClientSecret = builder.Configuration["Authentication:Google:ClientSecret"];
 
-// 🔍 Debug
-Console.WriteLine("==== CONFIG DEBUG ====");
-Console.WriteLine("JWT Key: " + (jwtKey ?? "NULL"));
-Console.WriteLine("Google ClientId: " + (googleClientId ?? "NULL"));
-Console.WriteLine("Google Secret: " + (googleClientSecret ?? "NULL"));
-Console.WriteLine("======================");
+// =====================
+// FORWARDED HEADERS (CRITICAL FOR RENDER)
+// =====================
+builder.Services.Configure<ForwardedHeadersOptions>(options =>
+{
+    options.ForwardedHeaders =
+        ForwardedHeaders.XForwardedFor |
+        ForwardedHeaders.XForwardedProto |
+        ForwardedHeaders.XForwardedHost;
 
-// 🔐 AUTH CONFIG (PRODUCTION SAFE)
+    options.KnownNetworks.Clear();
+    options.KnownProxies.Clear();
+});
+
+// =====================
+// AUTH
+// =====================
 builder.Services.AddAuthentication(options =>
 {
     options.DefaultScheme = CookieAuthenticationDefaults.AuthenticationScheme;
@@ -35,8 +45,9 @@ builder.Services.AddAuthentication(options =>
 .AddCookie(options =>
 {
     options.Cookie.Name = "auth_cookie";
-    options.Cookie.SameSite = SameSiteMode.None;                 // ✅ REQUIRED
-    options.Cookie.SecurePolicy = CookieSecurePolicy.Always;     // ✅ REQUIRED
+    options.Cookie.SameSite = SameSiteMode.None;
+    options.Cookie.SecurePolicy = CookieSecurePolicy.Always;
+    options.Cookie.IsEssential = true;
 })
 .AddGoogle(options =>
 {
@@ -44,33 +55,42 @@ builder.Services.AddAuthentication(options =>
     options.ClientSecret = googleClientSecret!;
     options.CallbackPath = "/signin-google";
 
-    // 🔥 FIX CORRELATION ERROR
+    options.SaveTokens = true;
+
     options.CorrelationCookie.SameSite = SameSiteMode.None;
     options.CorrelationCookie.SecurePolicy = CookieSecurePolicy.Always;
-
-    options.SaveTokens = true;
+    options.CorrelationCookie.IsEssential = true;
 });
 
 builder.Services.AddAuthorization();
 
 var app = builder.Build();
 
-// 🔥 VERY IMPORTANT FOR RENDER (HTTPS via proxy)
-app.UseForwardedHeaders(new ForwardedHeadersOptions
-{
-    ForwardedHeaders = ForwardedHeaders.XForwardedProto
-});
+// =====================
+// MIDDLEWARE ORDER (CRITICAL)
+// =====================
 
-// ❌ DO NOT USE THIS ON RENDER
-// app.UseHttpsRedirection();
+// 1. Fix proxy headers first
+app.UseForwardedHeaders();
+
+// 2. Force HTTPS scheme (Render proxy fix)
+app.Use((context, next) =>
+{
+    context.Request.Scheme = "https";
+    return next();
+});
 
 app.UseAuthentication();
 app.UseAuthorization();
 
-// ✅ Health check
+// =====================
+// ROUTES
+// =====================
 app.MapGet("/", () => "Auth Service Running 🚀");
 
-// ✅ Debug ENV
+// =====================
+// DEBUG (optional)
+// =====================
 app.MapGet("/debug/env", () =>
 {
     return new
@@ -81,17 +101,13 @@ app.MapGet("/debug/env", () =>
     };
 });
 
-// =========================
-// 🔐 AUTH ROUTES
-// =========================
-
-var authGroup = app.MapGroup("/auth");
-
-// 🔐 Google Login
-authGroup.MapGet("/google/login", async (HttpContext context) =>
+// =====================
+// GOOGLE LOGIN
+// =====================
+app.MapGet("/auth/google/login", async (HttpContext context) =>
 {
     if (string.IsNullOrEmpty(googleClientId))
-        return Results.BadRequest("Google auth not configured on server");
+        return Results.BadRequest("Google ClientId missing");
 
     await context.ChallengeAsync(GoogleDefaults.AuthenticationScheme,
         new AuthenticationProperties
@@ -102,24 +118,18 @@ authGroup.MapGet("/google/login", async (HttpContext context) =>
     return Results.Empty;
 });
 
-// ✅ Success → Generate JWT
-authGroup.MapGet("/success", (HttpContext context) =>
+// =====================
+// SUCCESS CALLBACK (SAFE)
+// =====================
+app.MapGet("/auth/success", (HttpContext context) =>
 {
     try
     {
         if (context.User.Identity?.IsAuthenticated != true)
-        {
             return Results.BadRequest("User not authenticated after Google login");
-        }
-
-        var jwtKey = builder.Configuration["Jwt:Key"];
-        var jwtIssuer = builder.Configuration["Jwt:Issuer"] ?? "AuthService";
-        var jwtAudience = builder.Configuration["Jwt:Audience"] ?? "AllServices";
 
         if (string.IsNullOrEmpty(jwtKey))
-        {
-            return Results.BadRequest("Jwt:Key is missing in environment variables");
-        }
+            return Results.BadRequest("JWT Key missing in environment variables");
 
         var userId = context.User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? "";
         var email = context.User.FindFirst(ClaimTypes.Email)?.Value ?? "";
@@ -137,8 +147,8 @@ authGroup.MapGet("/success", (HttpContext context) =>
         var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
 
         var token = new JwtSecurityToken(
-            issuer: jwtIssuer,
-            audience: jwtAudience,
+            issuer: jwtIssuer ?? "AuthService",
+            audience: jwtAudience ?? "AllServices",
             claims: claims,
             expires: DateTime.UtcNow.AddHours(1),
             signingCredentials: creds
@@ -154,11 +164,10 @@ authGroup.MapGet("/success", (HttpContext context) =>
     }
     catch (Exception ex)
     {
-        return Results.BadRequest(new
-        {
-            error = "Auth failed safely (no 500 anymore)",
-            message = ex.Message
-        });
+        return Results.Problem(
+            title: "Auth failed",
+            detail: ex.Message
+        );
     }
 });
 
