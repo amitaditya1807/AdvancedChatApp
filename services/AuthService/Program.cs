@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authentication.Google;
+using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
@@ -8,10 +9,10 @@ using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// 🔥 FORCE LOAD ENV VARIABLES (important for Render)
+// 🔥 Load ENV (Render)
 builder.Configuration.AddEnvironmentVariables();
 
-// 🔐 Read config
+// 🔐 Read config (USE ':' NOT '__')
 var jwtKey = builder.Configuration["Jwt:Key"];
 var jwtIssuer = builder.Configuration["Jwt:Issuer"];
 var jwtAudience = builder.Configuration["Jwt:Audience"];
@@ -19,45 +20,49 @@ var jwtAudience = builder.Configuration["Jwt:Audience"];
 var googleClientId = builder.Configuration["Authentication:Google:ClientId"];
 var googleClientSecret = builder.Configuration["Authentication:Google:ClientSecret"];
 
-// 🔍 Debug logs
+// 🔍 Debug
 Console.WriteLine("==== CONFIG DEBUG ====");
 Console.WriteLine("JWT Key: " + (jwtKey ?? "NULL"));
 Console.WriteLine("Google ClientId: " + (googleClientId ?? "NULL"));
 Console.WriteLine("Google Secret: " + (googleClientSecret ?? "NULL"));
 Console.WriteLine("======================");
 
-// 🔐 Authentication setup
-var authBuilder = builder.Services.AddAuthentication(options =>
+// 🔐 AUTH CONFIG (PRODUCTION SAFE)
+builder.Services.AddAuthentication(options =>
 {
     options.DefaultScheme = CookieAuthenticationDefaults.AuthenticationScheme;
+})
+.AddCookie(options =>
+{
+    options.Cookie.Name = "auth_cookie";
+    options.Cookie.SameSite = SameSiteMode.None;                 // ✅ REQUIRED
+    options.Cookie.SecurePolicy = CookieSecurePolicy.Always;     // ✅ REQUIRED
+})
+.AddGoogle(options =>
+{
+    options.ClientId = googleClientId!;
+    options.ClientSecret = googleClientSecret!;
+    options.CallbackPath = "/signin-google";
+
+    // 🔥 FIX CORRELATION ERROR
+    options.CorrelationCookie.SameSite = SameSiteMode.None;
+    options.CorrelationCookie.SecurePolicy = CookieSecurePolicy.Always;
+
+    options.SaveTokens = true;
 });
-
-authBuilder.AddCookie();
-
-// ✅ Add Google ONLY if env exists (prevents crash)
-if (!string.IsNullOrEmpty(googleClientId) && !string.IsNullOrEmpty(googleClientSecret))
-{
-    authBuilder.AddGoogle(options =>
-    {
-        options.ClientId = googleClientId;
-        options.ClientSecret = googleClientSecret;
-        options.CallbackPath = "/signin-google";
-        options.SaveTokens = true;
-    });
-
-    builder.Services.PostConfigure<AuthenticationOptions>(options =>
-    {
-        options.DefaultChallengeScheme = GoogleDefaults.AuthenticationScheme;
-    });
-}
-else
-{
-    Console.WriteLine("⚠️ Google Auth NOT configured (missing env vars)");
-}
 
 builder.Services.AddAuthorization();
 
 var app = builder.Build();
+
+// 🔥 VERY IMPORTANT FOR RENDER (HTTPS via proxy)
+app.UseForwardedHeaders(new ForwardedHeadersOptions
+{
+    ForwardedHeaders = ForwardedHeaders.XForwardedProto
+});
+
+// ❌ DO NOT USE THIS ON RENDER
+// app.UseHttpsRedirection();
 
 app.UseAuthentication();
 app.UseAuthorization();
@@ -65,12 +70,7 @@ app.UseAuthorization();
 // ✅ Health check
 app.MapGet("/", () => "Auth Service Running 🚀");
 
-// =========================
-// 🔐 AUTH ROUTES (UNCHANGED)
-// =========================
-
-var authGroup = app.MapGroup("/auth");
-
+// ✅ Debug ENV
 app.MapGet("/debug/env", () =>
 {
     return new
@@ -80,6 +80,12 @@ app.MapGet("/debug/env", () =>
         Jwt = Environment.GetEnvironmentVariable("Jwt__Key")
     };
 });
+
+// =========================
+// 🔐 AUTH ROUTES
+// =========================
+
+var authGroup = app.MapGroup("/auth");
 
 // 🔐 Google Login
 authGroup.MapGet("/google/login", async (HttpContext context) =>
@@ -93,7 +99,7 @@ authGroup.MapGet("/google/login", async (HttpContext context) =>
             RedirectUri = "/auth/success"
         });
 
-    return Results.Empty; // ✅ REQUIRED
+    return Results.Empty;
 });
 
 // ✅ Success → Generate JWT
