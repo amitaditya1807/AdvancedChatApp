@@ -8,11 +8,33 @@ using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// 🔐 Read config (Render env variables)
+// 🔐 Read configuration (Render ENV or local)
 var jwtKey = builder.Configuration["Jwt:Key"];
+var jwtIssuer = builder.Configuration["Jwt:Issuer"];
+var jwtAudience = builder.Configuration["Jwt:Audience"];
+
 var googleClientId = builder.Configuration["Authentication:Google:ClientId"];
 var googleClientSecret = builder.Configuration["Authentication:Google:ClientSecret"];
 
+// 🔥 Debug logs (Render logs will show this)
+Console.WriteLine("JWT Key exists: " + (jwtKey != null));
+Console.WriteLine("Google ClientId: " + googleClientId);
+Console.WriteLine("Google Secret exists: " + (googleClientSecret != null));
+
+// ❌ Fail fast if config missing
+if (string.IsNullOrEmpty(jwtKey))
+    throw new Exception("JWT Key missing!");
+
+if (string.IsNullOrEmpty(jwtIssuer))
+    throw new Exception("JWT Issuer missing!");
+
+if (string.IsNullOrEmpty(jwtAudience))
+    throw new Exception("JWT Audience missing!");
+
+if (string.IsNullOrEmpty(googleClientId) || string.IsNullOrEmpty(googleClientSecret))
+    throw new Exception("Google OAuth config missing!");
+
+// 🔐 Authentication setup
 builder.Services.AddAuthentication(options =>
 {
     options.DefaultScheme = CookieAuthenticationDefaults.AuthenticationScheme;
@@ -21,23 +43,25 @@ builder.Services.AddAuthentication(options =>
 .AddCookie()
 .AddGoogle(options =>
 {
-    options.ClientId = googleClientId!;
-    options.ClientSecret = googleClientSecret!;
+    options.ClientId = googleClientId;
+    options.ClientSecret = googleClientSecret;
     options.CallbackPath = "/signin-google";
     options.SaveTokens = true;
 });
 
+// 🔐 Authorization
 builder.Services.AddAuthorization();
 
 var app = builder.Build();
 
+app.UseHttpsRedirection();
 app.UseAuthentication();
 app.UseAuthorization();
 
 // ✅ Health check
-app.MapGet("/", () => "Auth Service Running");
+app.MapGet("/", () => "Auth Service Running 🚀");
 
-// 🔐 Login
+// 🔐 Google Login
 app.MapGet("/google/login", async (HttpContext context) =>
 {
     await context.ChallengeAsync(GoogleDefaults.AuthenticationScheme,
@@ -47,7 +71,7 @@ app.MapGet("/google/login", async (HttpContext context) =>
         });
 });
 
-// ✅ Success → generate JWT
+// ✅ Success → Generate JWT
 app.MapGet("/success", (HttpContext context) =>
 {
     if (context.User.Identity?.IsAuthenticated == true)
@@ -65,13 +89,13 @@ app.MapGet("/success", (HttpContext context) =>
         };
 
         var key = new SymmetricSecurityKey(
-            Encoding.UTF8.GetBytes(jwtKey!));
+            Encoding.UTF8.GetBytes(jwtKey));
 
         var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
 
         var token = new JwtSecurityToken(
-            issuer: "AuthService",
-            audience: "AllServices",
+            issuer: jwtIssuer,
+            audience: jwtAudience,
             claims: claims,
             expires: DateTime.UtcNow.AddHours(1),
             signingCredentials: creds
@@ -79,16 +103,19 @@ app.MapGet("/success", (HttpContext context) =>
 
         var jwt = new JwtSecurityTokenHandler().WriteToken(token);
 
-        // ✅ TEMP: return JSON (easy testing)
-        return Results.Json(new { token = jwt });
+        return Results.Json(new
+        {
+            token = jwt,
+            user = new
+            {
+                userId,
+                email,
+                name
+            }
+        });
     }
 
-    return Results.Text("Not authenticated");
+    return Results.Unauthorized();
 });
-
-
-// 🔥 IMPORTANT: Render PORT FIX
-var port = Environment.GetEnvironmentVariable("PORT") ?? "10000";
-app.Urls.Add($"http://0.0.0.0:{port}");
 
 app.Run();
