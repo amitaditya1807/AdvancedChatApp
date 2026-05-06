@@ -8,6 +8,8 @@ using System.Security.Claims;
 using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
+// 🔥 ADD THIS LINE (fix)
+builder.Configuration.AddEnvironmentVariables();
 
 // 🔐 Read config
 var jwtKey = builder.Configuration["Jwt:Key"];
