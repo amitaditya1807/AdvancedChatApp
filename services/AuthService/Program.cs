@@ -16,14 +16,14 @@ var jwtAudience = builder.Configuration["Jwt:Audience"];
 var googleClientId = builder.Configuration["Authentication:Google:ClientId"];
 var googleClientSecret = builder.Configuration["Authentication:Google:ClientSecret"];
 
-// 🔍 DEBUG LOGS (important)
+// Debug logs
 Console.WriteLine("==== CONFIG DEBUG ====");
 Console.WriteLine("JWT Key: " + (jwtKey ?? "NULL"));
 Console.WriteLine("Google ClientId: " + (googleClientId ?? "NULL"));
 Console.WriteLine("Google Secret: " + (googleClientSecret ?? "NULL"));
 Console.WriteLine("======================");
 
-// ✅ Always add auth (NO CRASH)
+// Authentication
 builder.Services.AddAuthentication(options =>
 {
     options.DefaultScheme = CookieAuthenticationDefaults.AuthenticationScheme;
@@ -45,39 +45,41 @@ var app = builder.Build();
 app.UseAuthentication();
 app.UseAuthorization();
 
-// Health check
+// ✅ Health check
 app.MapGet("/", () => "Auth Service Running 🚀");
 
-// Login
+// 🔐 Google Login
 app.MapGet("/google/login", async (HttpContext context) =>
 {
     if (string.IsNullOrEmpty(googleClientId))
-        return Results.BadRequest("Google ClientId missing in env");
+        return Results.BadRequest("Google ClientId missing");
 
     await context.ChallengeAsync(GoogleDefaults.AuthenticationScheme,
         new AuthenticationProperties
         {
             RedirectUri = "/success"
         });
+
+    return Results.Empty; // ✅ FIXED (important)
 });
 
-// Success
+// ✅ Success → generate JWT
 app.MapGet("/success", (HttpContext context) =>
 {
     if (context.User.Identity?.IsAuthenticated == true)
     {
         if (string.IsNullOrEmpty(jwtKey))
-            return Results.BadRequest("JWT Key missing in env");
+            return Results.BadRequest("JWT Key missing");
 
-        var userId = context.User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-        var email = context.User.FindFirst(ClaimTypes.Email)?.Value;
-        var name = context.User.FindFirst(ClaimTypes.Name)?.Value;
+        var userId = context.User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? "";
+        var email = context.User.FindFirst(ClaimTypes.Email)?.Value ?? "";
+        var name = context.User.FindFirst(ClaimTypes.Name)?.Value ?? "";
 
         var claims = new[]
         {
-            new Claim(ClaimTypes.NameIdentifier, userId ?? ""),
-            new Claim(ClaimTypes.Email, email ?? ""),
-            new Claim(ClaimTypes.Name, name ?? ""),
+            new Claim(ClaimTypes.NameIdentifier, userId),
+            new Claim(ClaimTypes.Email, email),
+            new Claim(ClaimTypes.Name, name),
             new Claim("provider", "google")
         };
 
