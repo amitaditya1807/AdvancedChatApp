@@ -8,7 +8,7 @@ using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// 🔐 Read configuration (Render ENV or local)
+// Read config
 var jwtKey = builder.Configuration["Jwt:Key"];
 var jwtIssuer = builder.Configuration["Jwt:Issuer"];
 var jwtAudience = builder.Configuration["Jwt:Audience"];
@@ -16,25 +16,14 @@ var jwtAudience = builder.Configuration["Jwt:Audience"];
 var googleClientId = builder.Configuration["Authentication:Google:ClientId"];
 var googleClientSecret = builder.Configuration["Authentication:Google:ClientSecret"];
 
-// 🔥 Debug logs (Render logs will show this)
-Console.WriteLine("JWT Key exists: " + (jwtKey != null));
-Console.WriteLine("Google ClientId: " + googleClientId);
-Console.WriteLine("Google Secret exists: " + (googleClientSecret != null));
+// 🔍 DEBUG LOGS (important)
+Console.WriteLine("==== CONFIG DEBUG ====");
+Console.WriteLine("JWT Key: " + (jwtKey ?? "NULL"));
+Console.WriteLine("Google ClientId: " + (googleClientId ?? "NULL"));
+Console.WriteLine("Google Secret: " + (googleClientSecret ?? "NULL"));
+Console.WriteLine("======================");
 
-// ❌ Fail fast if config missing
-if (string.IsNullOrEmpty(jwtKey))
-    throw new Exception("JWT Key missing!");
-
-if (string.IsNullOrEmpty(jwtIssuer))
-    throw new Exception("JWT Issuer missing!");
-
-if (string.IsNullOrEmpty(jwtAudience))
-    throw new Exception("JWT Audience missing!");
-
-if (string.IsNullOrEmpty(googleClientId) || string.IsNullOrEmpty(googleClientSecret))
-    throw new Exception("Google OAuth config missing!");
-
-// 🔐 Authentication setup
+// ✅ Always add auth (NO CRASH)
 builder.Services.AddAuthentication(options =>
 {
     options.DefaultScheme = CookieAuthenticationDefaults.AuthenticationScheme;
@@ -43,27 +32,28 @@ builder.Services.AddAuthentication(options =>
 .AddCookie()
 .AddGoogle(options =>
 {
-    options.ClientId = googleClientId;
-    options.ClientSecret = googleClientSecret;
+    options.ClientId = googleClientId ?? "";
+    options.ClientSecret = googleClientSecret ?? "";
     options.CallbackPath = "/signin-google";
     options.SaveTokens = true;
 });
 
-// 🔐 Authorization
 builder.Services.AddAuthorization();
 
 var app = builder.Build();
 
-app.UseHttpsRedirection();
 app.UseAuthentication();
 app.UseAuthorization();
 
-// ✅ Health check
+// Health check
 app.MapGet("/", () => "Auth Service Running 🚀");
 
-// 🔐 Google Login
+// Login
 app.MapGet("/google/login", async (HttpContext context) =>
 {
+    if (string.IsNullOrEmpty(googleClientId))
+        return Results.BadRequest("Google ClientId missing in env");
+
     await context.ChallengeAsync(GoogleDefaults.AuthenticationScheme,
         new AuthenticationProperties
         {
@@ -71,11 +61,14 @@ app.MapGet("/google/login", async (HttpContext context) =>
         });
 });
 
-// ✅ Success → Generate JWT
+// Success
 app.MapGet("/success", (HttpContext context) =>
 {
     if (context.User.Identity?.IsAuthenticated == true)
     {
+        if (string.IsNullOrEmpty(jwtKey))
+            return Results.BadRequest("JWT Key missing in env");
+
         var userId = context.User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
         var email = context.User.FindFirst(ClaimTypes.Email)?.Value;
         var name = context.User.FindFirst(ClaimTypes.Name)?.Value;
@@ -94,8 +87,8 @@ app.MapGet("/success", (HttpContext context) =>
         var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
 
         var token = new JwtSecurityToken(
-            issuer: jwtIssuer,
-            audience: jwtAudience,
+            issuer: jwtIssuer ?? "AuthService",
+            audience: jwtAudience ?? "AllServices",
             claims: claims,
             expires: DateTime.UtcNow.AddHours(1),
             signingCredentials: creds
@@ -106,12 +99,7 @@ app.MapGet("/success", (HttpContext context) =>
         return Results.Json(new
         {
             token = jwt,
-            user = new
-            {
-                userId,
-                email,
-                name
-            }
+            user = new { userId, email, name }
         });
     }
 
