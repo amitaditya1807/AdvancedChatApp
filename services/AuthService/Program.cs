@@ -9,9 +9,9 @@ using System.Text;
 var builder = WebApplication.CreateBuilder(args);
 
 // 🔐 Read config (Render env variables)
-var jwtKey = builder.Configuration["Jwt:Key"];
-var googleClientId = builder.Configuration["Authentication:Google:ClientId"];
-var googleClientSecret = builder.Configuration["Authentication:Google:ClientSecret"];
+var jwtKey = builder.Configuration["Jwt__Key"];
+var googleClientId = builder.Configuration["Authentication__Google__ClientId"];
+var googleClientSecret = builder.Configuration["Authentication__Google__ClientSecret"];
 
 builder.Services.AddAuthentication(options =>
 {
