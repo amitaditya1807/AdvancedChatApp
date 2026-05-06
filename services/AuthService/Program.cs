@@ -1,14 +1,14 @@
 ﻿using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authentication.Google;
-using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
-// 🔥 ADD THIS LINE (fix)
+
+// 🔥 FORCE LOAD ENV VARIABLES (important for Render)
 builder.Configuration.AddEnvironmentVariables();
 
 // 🔐 Read config
@@ -16,8 +16,8 @@ var jwtKey = builder.Configuration["Jwt__Key"];
 var jwtIssuer = builder.Configuration["Jwt__Issuer"];
 var jwtAudience = builder.Configuration["Jwt__Audience"];
 
-var googleClientId = Environment.GetEnvironmentVariable("Authentication__Google__ClientId");
-var googleClientSecret = Environment.GetEnvironmentVariable("Authentication__Google__ClientSecret");
+var googleClientId = builder.Configuration["Authentication__Google__ClientId"];
+var googleClientSecret = builder.Configuration["Authentication__Google__ClientSecret"];
 
 // 🔍 Debug logs
 Console.WriteLine("==== CONFIG DEBUG ====");
@@ -65,8 +65,14 @@ app.UseAuthorization();
 // ✅ Health check
 app.MapGet("/", () => "Auth Service Running 🚀");
 
+// =========================
+// 🔐 AUTH ROUTES (UNCHANGED)
+// =========================
+
+var authGroup = app.MapGroup("/auth");
+
 // 🔐 Google Login
-app.MapGet("/google/login", async (HttpContext context) =>
+authGroup.MapGet("/google/login", async (HttpContext context) =>
 {
     if (string.IsNullOrEmpty(googleClientId))
         return Results.BadRequest("Google auth not configured on server");
@@ -74,14 +80,14 @@ app.MapGet("/google/login", async (HttpContext context) =>
     await context.ChallengeAsync(GoogleDefaults.AuthenticationScheme,
         new AuthenticationProperties
         {
-            RedirectUri = "/success"
+            RedirectUri = "/auth/success"
         });
 
-    return Results.Empty; // IMPORTANT
+    return Results.Empty; // ✅ REQUIRED
 });
 
 // ✅ Success → Generate JWT
-app.MapGet("/success", (HttpContext context) =>
+authGroup.MapGet("/success", (HttpContext context) =>
 {
     if (context.User.Identity?.IsAuthenticated == true)
     {
@@ -101,7 +107,6 @@ app.MapGet("/success", (HttpContext context) =>
         };
 
         var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtKey));
-
         var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
 
         var token = new JwtSecurityToken(
