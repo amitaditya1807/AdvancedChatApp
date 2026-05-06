@@ -12,12 +12,12 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Configuration.AddEnvironmentVariables();
 
 // 🔐 Read config
-var jwtKey = builder.Configuration["Jwt__Key"];
-var jwtIssuer = builder.Configuration["Jwt__Issuer"];
-var jwtAudience = builder.Configuration["Jwt__Audience"];
+var jwtKey = builder.Configuration["Jwt:Key"];
+var jwtIssuer = builder.Configuration["Jwt:Issuer"];
+var jwtAudience = builder.Configuration["Jwt:Audience"];
 
-var googleClientId = builder.Configuration["Authentication__Google__ClientId"];
-var googleClientSecret = builder.Configuration["Authentication__Google__ClientSecret"];
+var googleClientId = builder.Configuration["Authentication:Google:ClientId"];
+var googleClientSecret = builder.Configuration["Authentication:Google:ClientSecret"];
 
 // 🔍 Debug logs
 Console.WriteLine("==== CONFIG DEBUG ====");
