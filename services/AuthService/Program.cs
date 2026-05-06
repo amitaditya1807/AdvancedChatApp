@@ -71,6 +71,16 @@ app.MapGet("/", () => "Auth Service Running 🚀");
 
 var authGroup = app.MapGroup("/auth");
 
+app.MapGet("/debug/env", () =>
+{
+    return new
+    {
+        ClientId = Environment.GetEnvironmentVariable("Authentication__Google__ClientId"),
+        Secret = Environment.GetEnvironmentVariable("Authentication__Google__ClientSecret"),
+        Jwt = Environment.GetEnvironmentVariable("Jwt__Key")
+    };
+});
+
 // 🔐 Google Login
 authGroup.MapGet("/google/login", async (HttpContext context) =>
 {
