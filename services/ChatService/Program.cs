@@ -1,16 +1,12 @@
 ﻿using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
-using System.Text;
 using System.Security.Claims;
+using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// 🔹 Read config
-var jwtKey = builder.Configuration["Jwt:Key"];
-var issuer = builder.Configuration["Jwt:Issuer"];
-var audience = builder.Configuration["Jwt:Audience"];
+var key = "THIS_IS_MY_SUPER_SECURE_JWT_SECRET_KEY_2026";
 
-// 🔐 JWT Authentication
 builder.Services.AddAuthentication(options =>
 {
     options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
@@ -25,26 +21,11 @@ builder.Services.AddAuthentication(options =>
         ValidateLifetime = true,
         ValidateIssuerSigningKey = true,
 
-        ValidIssuer = issuer,
-        ValidAudience = audience,
+        ValidIssuer = "AuthService",
+        ValidAudience = "AllServices",
 
         IssuerSigningKey = new SymmetricSecurityKey(
-            Encoding.UTF8.GetBytes(jwtKey!))
-    };
-
-    // 🔍 Debug logs
-    options.Events = new JwtBearerEvents
-    {
-        OnAuthenticationFailed = context =>
-        {
-            Console.WriteLine("❌ Auth failed: " + context.Exception.Message);
-            return Task.CompletedTask;
-        },
-        OnTokenValidated = context =>
-        {
-            Console.WriteLine("✅ Token validated");
-            return Task.CompletedTask;
-        }
+            Encoding.UTF8.GetBytes(key))
     };
 });
 
@@ -55,18 +36,15 @@ var app = builder.Build();
 app.UseAuthentication();
 app.UseAuthorization();
 
-// 🔹 Public endpoint
 app.MapGet("/", () => "Chat Service Running");
 
-// 🔹 Protected endpoint
 app.MapGet("/secure", (HttpContext context) =>
 {
-    var user = context.User;
+    var userId = context.User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
 
-    var userId = user.Claims.FirstOrDefault(c => c.Type == ClaimTypes.NameIdentifier)?.Value;
-    var name = user.Claims.FirstOrDefault(c => c.Type == ClaimTypes.Name)?.Value;
-    var email = user.Claims.FirstOrDefault(c => c.Type == ClaimTypes.Email)?.Value;
-    var provider = user.Claims.FirstOrDefault(c => c.Type == "provider")?.Value;
+    var email = context.User.FindFirst(ClaimTypes.Email)?.Value;
+
+    var name = context.User.FindFirst(ClaimTypes.Name)?.Value;
 
     return Results.Json(new
     {
@@ -75,11 +53,9 @@ app.MapGet("/secure", (HttpContext context) =>
         {
             userId,
             name,
-            email,
-            provider
+            email
         }
     });
-})
-.RequireAuthorization();
+}).RequireAuthorization();
 
 app.Run();

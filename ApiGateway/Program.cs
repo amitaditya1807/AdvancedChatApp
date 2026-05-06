@@ -2,17 +2,24 @@
 
 var builder = WebApplication.CreateBuilder(args);
 
-// ✅ YARP without custom handler (simplest working version)
+// ✅ CORS
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("AllowAll",
+        policy => policy
+            .AllowAnyOrigin()
+            .AllowAnyHeader()
+            .AllowAnyMethod());
+});
+
+// ✅ YARP
 builder.Services
     .AddReverseProxy()
     .LoadFromConfig(builder.Configuration.GetSection("ReverseProxy"));
 
-builder.Logging.ClearProviders();
-builder.Logging.AddConsole();
-
 var app = builder.Build();
 
-app.MapGet("/", () => "Gateway working");
+app.UseCors("AllowAll");
 
 app.MapReverseProxy();
 
