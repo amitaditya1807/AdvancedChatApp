@@ -5,57 +5,65 @@ using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
 
-var key = "THIS_IS_MY_SUPER_SECURE_JWT_SECRET_KEY_2026";
+// 🌍 Load ENV
+builder.Configuration.AddEnvironmentVariables();
 
-builder.Services.AddAuthentication(options =>
-{
-    options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
-    options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
-})
-.AddJwtBearer(options =>
-{
-    options.TokenValidationParameters = new TokenValidationParameters
+// 🔐 JWT Config
+var jwtKey = builder.Configuration["Jwt:Key"];
+var jwtIssuer = builder.Configuration["Jwt:Issuer"];
+var jwtAudience = builder.Configuration["Jwt:Audience"];
+
+builder.Services.AddAuthentication("Bearer")
+    .AddJwtBearer("Bearer", options =>
     {
-        ValidateIssuer = true,
-        ValidateAudience = true,
-        ValidateLifetime = true,
-        ValidateIssuerSigningKey = true,
+        options.TokenValidationParameters = new TokenValidationParameters
+        {
+            ValidateIssuer = true,
+            ValidateAudience = true,
+            ValidateLifetime = true,
+            ValidateIssuerSigningKey = true,
 
-        ValidIssuer = "AuthService",
-        ValidAudience = "AllServices",
-
-        IssuerSigningKey = new SymmetricSecurityKey(
-            Encoding.UTF8.GetBytes(key))
-    };
-});
+            ValidIssuer = jwtIssuer ?? "AuthService",
+            ValidAudience = jwtAudience ?? "AllServices",
+            IssuerSigningKey = new SymmetricSecurityKey(
+                Encoding.UTF8.GetBytes(jwtKey!))
+        };
+    });
 
 builder.Services.AddAuthorization();
 
+// 🌐 CORS (important for frontend)
+builder.Services.AddCors(options =>
+{
+    options.AddDefaultPolicy(policy =>
+    {
+        policy.AllowAnyOrigin()
+              .AllowAnyHeader()
+              .AllowAnyMethod();
+    });
+});
+
 var app = builder.Build();
+
+app.UseCors();
 
 app.UseAuthentication();
 app.UseAuthorization();
 
-app.MapGet("/", () => "Chat Service Running");
+// 🟢 Health check
+app.MapGet("/", () => "Chat Service Running 🚀");
 
-app.MapGet("/secure", (HttpContext context) =>
+// 🔒 Protected route
+app.MapGet("/chat", (HttpContext context) =>
 {
     var userId = context.User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
 
-    var email = context.User.FindFirst(ClaimTypes.Email)?.Value;
-
-    var name = context.User.FindFirst(ClaimTypes.Name)?.Value;
-
     return Results.Json(new
     {
-        message = "✅ You are authenticated!",
-        user = new
-        {
-            userId,
-            name,
-            email
-        }
+        message = $"Hello {userId}, Chat service working!",
+        time = DateTime.UtcNow
     });
-}).RequireAuthorization();
+})
+.RequireAuthorization();
 
 app.Run();
