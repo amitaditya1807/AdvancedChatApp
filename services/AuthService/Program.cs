@@ -105,10 +105,21 @@ authGroup.MapGet("/google/login", async (HttpContext context) =>
 // ✅ Success → Generate JWT
 authGroup.MapGet("/success", (HttpContext context) =>
 {
-    if (context.User.Identity?.IsAuthenticated == true)
+    try
     {
+        if (context.User.Identity?.IsAuthenticated != true)
+        {
+            return Results.BadRequest("User not authenticated after Google login");
+        }
+
+        var jwtKey = builder.Configuration["Jwt:Key"];
+        var jwtIssuer = builder.Configuration["Jwt:Issuer"] ?? "AuthService";
+        var jwtAudience = builder.Configuration["Jwt:Audience"] ?? "AllServices";
+
         if (string.IsNullOrEmpty(jwtKey))
-            return Results.BadRequest("JWT Key missing");
+        {
+            return Results.BadRequest("Jwt:Key is missing in environment variables");
+        }
 
         var userId = context.User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? "";
         var email = context.User.FindFirst(ClaimTypes.Email)?.Value ?? "";
@@ -126,8 +137,8 @@ authGroup.MapGet("/success", (HttpContext context) =>
         var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
 
         var token = new JwtSecurityToken(
-            issuer: jwtIssuer ?? "AuthService",
-            audience: jwtAudience ?? "AllServices",
+            issuer: jwtIssuer,
+            audience: jwtAudience,
             claims: claims,
             expires: DateTime.UtcNow.AddHours(1),
             signingCredentials: creds
@@ -141,8 +152,14 @@ authGroup.MapGet("/success", (HttpContext context) =>
             user = new { userId, email, name }
         });
     }
-
-    return Results.Unauthorized();
+    catch (Exception ex)
+    {
+        return Results.BadRequest(new
+        {
+            error = "Auth failed safely (no 500 anymore)",
+            message = ex.Message
+        });
+    }
 });
 
 app.Run();
