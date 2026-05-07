@@ -3,8 +3,11 @@
 var builder = WebApplication.CreateBuilder(args);
 
 // 🔥 IMPORTANT: Render dynamic port binding
-var port = Environment.GetEnvironmentVariable("PORT") ?? "10000";
+/*var port = Environment.GetEnvironmentVariable("PORT") ?? "10000";
 builder.WebHost.UseUrls($"http://0.0.0.0:{port}");
+*/
+// 🔥 Hardcode localhost port
+builder.WebHost.UseUrls("https://localhost:7000");
 
 // CORS (safe for frontend apps)
 builder.Services.AddCors(options =>
