@@ -20,6 +20,8 @@ var jwtAudience = builder.Configuration["Jwt:Audience"];
 
 var googleClientId = builder.Configuration["Authentication:Google:ClientId"];
 var googleClientSecret = builder.Configuration["Authentication:Google:ClientSecret"];
+var frontendRedirectUrl = builder.Configuration["Frontend:RedirectUrl"]
+    ?? Environment.GetEnvironmentVariable("FRONTEND_REDIRECT_URL");
 
 // =====================
 // FORWARDED HEADERS (CRITICAL FOR RENDER)
@@ -155,6 +157,12 @@ app.MapGet("/auth/success", (HttpContext context) =>
         );
 
         var jwt = new JwtSecurityTokenHandler().WriteToken(token);
+
+        if (!string.IsNullOrWhiteSpace(frontendRedirectUrl))
+        {
+            var separator = frontendRedirectUrl.Contains('?') ? "&" : "?";
+            return Results.Redirect($"{frontendRedirectUrl}{separator}token={Uri.EscapeDataString(jwt)}");
+        }
 
         return Results.Json(new
         {
