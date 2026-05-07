@@ -441,14 +441,65 @@
                 }
 
                 const elapsedSeconds = ((performance.now() - startedAt) / 1000).toFixed(1);
-                output.textContent =
-                    `✅ Got response from ChatService in ${elapsedSeconds}s:\n` +
-                    JSON.stringify(body, null, 2);
+                output.textContent = formatChatServiceSuccess(body, elapsedSeconds);
             } catch (error) {
                 output.textContent = `❌ ERROR:\n${error.message}`;
             } finally {
                 chatButton.disabled = false;
                 chatButton.textContent = "Call ChatService";
+            }
+        }
+
+        function formatChatServiceSuccess(body, elapsedSeconds) {
+            const profile = getUserProfileFromToken();
+            const serviceMessage = typeof body?.message === "string"
+                ? body.message.replace(/^Hello\s+.*?,\s*/i, "")
+                : "ChatService accepted your authenticated request.";
+            const serverTime = body?.time
+                ? new Date(body.time).toLocaleString()
+                : "Not provided";
+
+            return [
+                "✅ ChatService is ready",
+                "",
+                `👤 Signed in as: ${profile.displayName}`,
+                `📧 Email: ${profile.email}`,
+                `💬 Chat status: ${serviceMessage}`,
+                `⚡ Gateway response time: ${elapsedSeconds}s`,
+                `🕒 Server time: ${serverTime}`,
+                "",
+                "You can now use this JWT-protected connection for chat features like loading conversations, sending messages, or joining rooms.",
+                "",
+                "Technical response:",
+                JSON.stringify(body, null, 2)
+            ].join("\n");
+        }
+
+        function getUserProfileFromToken() {
+            const payload = decodeJwtPayload(token);
+            const name = payload?.["http://schemas.xmlsoap.org/ws/2005/05/identity/claims/name"]
+                || payload?.name
+                || "Google user";
+            const email = payload?.["http://schemas.xmlsoap.org/ws/2005/05/identity/claims/emailaddress"]
+                || payload?.email
+                || "Email not available";
+
+            return { displayName: name, email };
+        }
+
+        function decodeJwtPayload(jwt) {
+            try {
+                const payload = jwt.split(".")[1];
+                const base64 = payload.replace(/-/g, "+").replace(/_/g, "/");
+                const paddedBase64 = base64.padEnd(base64.length + ((4 - base64.length % 4) % 4), "=");
+                const json = decodeURIComponent(atob(paddedBase64)
+                    .split("")
+                    .map((char) => `%${(`00${char.charCodeAt(0).toString(16)}`).slice(-2)}`)
+                    .join(""));
+
+                return JSON.parse(json);
+            } catch {
+                return null;
             }
         }
 
