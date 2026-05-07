@@ -216,8 +216,7 @@
             font-size: 14px;
             line-height: 1.5;
         }
-
-        .tool-card {
+                .tool-card {
             padding: 24px;
             margin-bottom: 24px;
         }
@@ -384,14 +383,15 @@
         </section>
 
         <section class="panel tool-card">
-            <h2>Authorized YouTube Download Helper</h2>
+            <h2>Authorized YouTube Download Request</h2>
             <p>
                 Paste a YouTube URL that you own or have permission to download.
-                ChatService validates the URL and prepares a safe download workflow response.
+                ChatService validates the URL and downloads a local request report.
+                The actual YouTube video file must be downloaded through YouTube Studio or an owner-approved method.
             </p>
             <div class="tool-form">
                 <input id="youtubeUrl" type="url" placeholder="https://www.youtube.com/watch?v=VIDEO_ID">
-                <button id="youtubeButton" class="primary" onclick="prepareYouTubeDownload()">Prepare Download</button>
+                <button id="youtubeButton" class="primary" onclick="prepareYouTubeDownload()">Prepare Request</button>
             </div>
             <label class="check-row">
                 <input id="youtubePermission" type="checkbox">
@@ -468,8 +468,7 @@
         function login() {
             window.location.href = `${API_GATEWAY_URL}/auth/google/login`;
         }
-
-        async function callChatService() {
+                async function callChatService() {
             if (!token) {
                 output.textContent = "❌ Please sign in with Google first.";
                 return;
@@ -546,7 +545,7 @@
             const startedAt = performance.now();
             youtubeButton.disabled = true;
             youtubeButton.textContent = "Preparing...";
-            output.textContent = "⏳ Asking ChatService to validate the YouTube URL and prepare the authorized download workflow...";
+            output.textContent = "⏳ Asking ChatService to validate the YouTube URL and prepare a downloadable request report...";
 
             try {
                 const response = await fetch(`${API_GATEWAY_URL}/chat/youtube/prepare`, {
@@ -578,12 +577,13 @@
                 }
 
                 const elapsedSeconds = ((performance.now() - startedAt) / 1000).toFixed(1);
+                downloadYouTubeRequestReport(body);
                 output.textContent = formatYouTubeDownloadSuccess(body, elapsedSeconds);
             } catch (error) {
                 output.textContent = `❌ ERROR:\n${error.message}`;
             } finally {
                 youtubeButton.disabled = false;
-                youtubeButton.textContent = "Prepare Download";
+                youtubeButton.textContent = "Prepare Request";
             }
         }
 
@@ -593,21 +593,52 @@
                 : "No next steps returned.";
 
             return [
-                "✅ YouTube download workflow prepared",
+                "✅ YouTube request report downloaded",
                 "",
                 `🎬 Video ID: ${body?.videoId || "Not available"}`,
                 `▶️ Watch URL: ${body?.watchUrl || "Not available"}`,
+                `📝 Report file: ${body?.reportFileName || "youtube-download-request.txt"}`,
                 `🔐 Status: ${body?.status || "Authorized request validated"}`,
                 `⚡ ChatService response time: ${elapsedSeconds}s`,
+                "",
+                "Important:",
+                "This app downloaded a request report, not the YouTube video file.",
+                "For your own channel videos, download the actual video from YouTube Studio:",
+                body?.officialStudioUrl || "https://studio.youtube.com/",
                 "",
                 "Next steps:",
                 nextSteps,
                 "",
-                "Note: This helper is for videos you own or have permission to download. It does not bypass YouTube protections or ownership rules.",
+                "Technical response:",
+                JSON.stringify(body, null, 2)
+            ].join("\n");
+        }
+
+        function downloadYouTubeRequestReport(body) {
+            const report = [
+                "YouTube Download Request Report",
+                "================================",
+                `Generated: ${new Date().toLocaleString()}`,
+                `Video ID: ${body?.videoId || "Not available"}`,
+                `Watch URL: ${body?.watchUrl || "Not available"}`,
+                `Requested by: ${body?.requestedBy?.email || "Unknown user"}`,
+                "",
+                "Important:",
+                "This report confirms that the app validated a request. It is not the YouTube video file.",
+                "Download the actual video only through YouTube Studio or another owner-approved method.",
                 "",
                 "Technical response:",
                 JSON.stringify(body, null, 2)
             ].join("\n");
+
+            const blob = new Blob([report], { type: "text/plain;charset=utf-8" });
+            const link = document.createElement("a");
+            link.href = URL.createObjectURL(blob);
+            link.download = body?.reportFileName || "youtube-download-request.txt";
+            document.body.appendChild(link);
+            link.click();
+            link.remove();
+            URL.revokeObjectURL(link.href);
         }
 
         function formatChatServiceSuccess(body, elapsedSeconds) {

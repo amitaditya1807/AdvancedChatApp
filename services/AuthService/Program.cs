@@ -158,11 +158,13 @@ app.MapGet("/auth/success", (HttpContext context) =>
 
         var jwt = new JwtSecurityTokenHandler().WriteToken(token);
 
-        if (!string.IsNullOrWhiteSpace(frontendRedirectUrl))
-        {
-            var separator = frontendRedirectUrl.Contains('?') ? "&" : "?";
-            return Results.Redirect($"{frontendRedirectUrl}{separator}token={Uri.EscapeDataString(jwt)}");
-        }
+        var (redirectUrl, redirectError) = CreateFrontendTokenRedirectUrl(frontendRedirectUrl, jwt);
+
+        if (!string.IsNullOrEmpty(redirectError))
+            return Results.BadRequest(redirectError);
+
+        if (!string.IsNullOrEmpty(redirectUrl))
+            return Results.Redirect(redirectUrl);
 
         return Results.Json(new
         {
@@ -180,3 +182,32 @@ app.MapGet("/auth/success", (HttpContext context) =>
 });
 
 app.Run();
+
+static (string? RedirectUrl, string? Error) CreateFrontendTokenRedirectUrl(string? frontendRedirectUrl, string jwt)
+{
+    if (string.IsNullOrWhiteSpace(frontendRedirectUrl))
+        return (null, null);
+
+    var trimmedUrl = frontendRedirectUrl.Trim();
+
+    if (trimmedUrl.Contains("your-frontend", StringComparison.OrdinalIgnoreCase) ||
+        trimmedUrl.Contains("YOUR-FRONTEND-SERVICE", StringComparison.OrdinalIgnoreCase))
+    {
+        return (null,
+            "Frontend redirect URL is still using the placeholder value. " +
+            "Set AuthService Frontend__RedirectUrl to the real Render Static Site URL, for example https://advanced-chat-frontend.onrender.com/.");
+    }
+
+    if (!Uri.TryCreate(trimmedUrl, UriKind.Absolute, out var frontendUri) ||
+        (frontendUri.Scheme != Uri.UriSchemeHttps && frontendUri.Scheme != Uri.UriSchemeHttp))
+    {
+        return (null,
+            "Frontend redirect URL must be an absolute http or https URL, for example https://advanced-chat-frontend.onrender.com/.");
+    }
+
+    var builder = new UriBuilder(frontendUri);
+    var queryPrefix = string.IsNullOrWhiteSpace(builder.Query) ? string.Empty : builder.Query.TrimStart('?') + "&";
+    builder.Query = queryPrefix + "token=" + Uri.EscapeDataString(jwt);
+
+    return (builder.Uri.ToString(), null);
+}

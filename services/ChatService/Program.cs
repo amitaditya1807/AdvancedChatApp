@@ -103,18 +103,22 @@ app.MapPost("/chat/youtube/prepare", (YouTubeDownloadRequest request, HttpContex
 
     return Results.Json(new
     {
-        title = "YouTube download request prepared",
-        message = "Validated an authorized YouTube download request. Use this only for videos you own or have permission to download.",
+        title = "YouTube download request report prepared",
+        message = "Validated an authorized YouTube request and generated a local report. The app does not auto-download the YouTube video file.",
         videoId,
         watchUrl,
         embedUrl = $"https://www.youtube.com/embed/{videoId}",
+        officialStudioUrl = "https://studio.youtube.com/",
         requestedBy = new { userId, email },
-        status = "Ready for an authorized downloader workflow",
+        canStartBrowserVideoDownload = false,
+        reportFileName = $"youtube-download-request-{videoId}.txt",
+        status = "Request validated; use YouTube Studio or another owner-approved method for the actual video file",
         nextSteps = new[]
         {
-            "Confirm the video is your own content or you have permission from the owner.",
-            "For your own channel videos, YouTube Studio is the safest official download option.",
-            "If you later add server-side downloading, keep this permission check and store an audit log for each request."
+            "A request report will download in the browser for your records.",
+            "If this is your own channel video, open YouTube Studio and use the official download option for the actual video file.",
+            "If this is someone else's video, get explicit permission and use the method the owner provides.",
+            "This app does not bypass YouTube protections or automatically download YouTube video files."
         },
         time = DateTime.UtcNow
     });
