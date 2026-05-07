@@ -216,59 +216,6 @@
             font-size: 14px;
             line-height: 1.5;
         }
-                .tool-card {
-            padding: 24px;
-            margin-bottom: 24px;
-        }
-
-        .tool-card h2 {
-            margin: 0 0 10px;
-            font-size: 22px;
-        }
-
-        .tool-card p {
-            margin: 0 0 18px;
-            color: var(--muted);
-            line-height: 1.6;
-        }
-
-        .tool-form {
-            display: grid;
-            grid-template-columns: 1fr auto;
-            gap: 12px;
-            align-items: center;
-        }
-
-        input[type="url"] {
-            width: 100%;
-            border: 1px solid var(--card-border);
-            border-radius: 16px;
-            padding: 14px 16px;
-            color: var(--text);
-            background: rgba(2, 6, 23, 0.42);
-            font-size: 15px;
-            outline: none;
-        }
-
-        input[type="url"]:focus {
-            border-color: rgba(96, 165, 250, 0.78);
-            box-shadow: 0 0 0 4px rgba(96, 165, 250, 0.12);
-        }
-
-        .check-row {
-            display: flex;
-            gap: 10px;
-            align-items: flex-start;
-            margin-top: 14px;
-            color: var(--muted);
-            font-size: 14px;
-            line-height: 1.45;
-        }
-
-        .check-row input {
-            margin-top: 3px;
-            accent-color: var(--primary);
-        }
 
         .output-card {
             padding: 24px;
@@ -313,8 +260,7 @@
 
         @media (max-width: 820px) {
             .hero,
-            .grid,
-            .tool-form {
+            .grid {
                 grid-template-columns: 1fr;
             }
 
@@ -382,23 +328,6 @@
             </div>
         </section>
 
-        <section class="panel tool-card">
-            <h2>Authorized YouTube Download Request</h2>
-            <p>
-                Paste a YouTube URL that you own or have permission to download.
-                ChatService validates the URL and downloads a local request report.
-                The actual YouTube video file must be downloaded through YouTube Studio or an owner-approved method.
-            </p>
-            <div class="tool-form">
-                <input id="youtubeUrl" type="url" placeholder="https://www.youtube.com/watch?v=VIDEO_ID">
-                <button id="youtubeButton" class="primary" onclick="prepareYouTubeDownload()">Prepare Request</button>
-            </div>
-            <label class="check-row">
-                <input id="youtubePermission" type="checkbox">
-                <span>I confirm this is my video or I have permission from the owner to download it.</span>
-            </label>
-        </section>
-
         <section class="panel output-card">
             <div class="output-header">
                 <h2>API Response</h2>
@@ -419,9 +348,6 @@
 
         const output = document.getElementById("output");
         const chatButton = document.getElementById("chatButton");
-        const youtubeButton = document.getElementById("youtubeButton");
-        const youtubeUrl = document.getElementById("youtubeUrl");
-        const youtubePermission = document.getElementById("youtubePermission");
         const sessionText = document.getElementById("sessionText");
         const sessionBadge = document.getElementById("sessionBadge");
         const tokenPreview = document.getElementById("tokenPreview");
@@ -468,7 +394,8 @@
         function login() {
             window.location.href = `${API_GATEWAY_URL}/auth/google/login`;
         }
-                async function callChatService() {
+
+        async function callChatService() {
             if (!token) {
                 output.textContent = "❌ Please sign in with Google first.";
                 return;
@@ -521,124 +448,6 @@
                 chatButton.disabled = false;
                 chatButton.textContent = "Call ChatService";
             }
-        }
-
-        async function prepareYouTubeDownload() {
-            if (!token) {
-                output.textContent = "❌ Please sign in with Google first.";
-                return;
-            }
-
-            const url = youtubeUrl.value.trim();
-            if (!url) {
-                output.textContent = "❌ Please paste a YouTube URL first.";
-                youtubeUrl.focus();
-                return;
-            }
-
-            if (!youtubePermission.checked) {
-                output.textContent = "❌ Please confirm you own the video or have permission to download it.";
-                youtubePermission.focus();
-                return;
-            }
-
-            const startedAt = performance.now();
-            youtubeButton.disabled = true;
-            youtubeButton.textContent = "Preparing...";
-            output.textContent = "⏳ Asking ChatService to validate the YouTube URL and prepare a downloadable request report...";
-
-            try {
-                const response = await fetch(`${API_GATEWAY_URL}/chat/youtube/prepare`, {
-                    method: "POST",
-                    headers: {
-                        "Authorization": `Bearer ${token}`,
-                        "Content-Type": "application/json"
-                    },
-                    body: JSON.stringify({
-                        url,
-                        hasPermission: youtubePermission.checked
-                    })
-                });
-
-                const text = await response.text();
-                let body;
-
-                try {
-                    body = JSON.parse(text);
-                } catch {
-                    body = text;
-                }
-
-                if (!response.ok) {
-                    const formattedBody = typeof body === "string"
-                        ? body
-                        : JSON.stringify(body, null, 2);
-                    throw new Error(`Status: ${response.status}\n${formattedBody}`);
-                }
-
-                const elapsedSeconds = ((performance.now() - startedAt) / 1000).toFixed(1);
-                downloadYouTubeRequestReport(body);
-                output.textContent = formatYouTubeDownloadSuccess(body, elapsedSeconds);
-            } catch (error) {
-                output.textContent = `❌ ERROR:\n${error.message}`;
-            } finally {
-                youtubeButton.disabled = false;
-                youtubeButton.textContent = "Prepare Request";
-            }
-        }
-
-        function formatYouTubeDownloadSuccess(body, elapsedSeconds) {
-            const nextSteps = Array.isArray(body?.nextSteps)
-                ? body.nextSteps.map((step, index) => `${index + 1}. ${step}`).join("\n")
-                : "No next steps returned.";
-
-            return [
-                "✅ YouTube request report downloaded",
-                "",
-                `🎬 Video ID: ${body?.videoId || "Not available"}`,
-                `▶️ Watch URL: ${body?.watchUrl || "Not available"}`,
-                `📝 Report file: ${body?.reportFileName || "youtube-download-request.txt"}`,
-                `🔐 Status: ${body?.status || "Authorized request validated"}`,
-                `⚡ ChatService response time: ${elapsedSeconds}s`,
-                "",
-                "Important:",
-                "This app downloaded a request report, not the YouTube video file.",
-                "For your own channel videos, download the actual video from YouTube Studio:",
-                body?.officialStudioUrl || "https://studio.youtube.com/",
-                "",
-                "Next steps:",
-                nextSteps,
-                "",
-                "Technical response:",
-                JSON.stringify(body, null, 2)
-            ].join("\n");
-        }
-
-        function downloadYouTubeRequestReport(body) {
-            const report = [
-                "YouTube Download Request Report",
-                "================================",
-                `Generated: ${new Date().toLocaleString()}`,
-                `Video ID: ${body?.videoId || "Not available"}`,
-                `Watch URL: ${body?.watchUrl || "Not available"}`,
-                `Requested by: ${body?.requestedBy?.email || "Unknown user"}`,
-                "",
-                "Important:",
-                "This report confirms that the app validated a request. It is not the YouTube video file.",
-                "Download the actual video only through YouTube Studio or another owner-approved method.",
-                "",
-                "Technical response:",
-                JSON.stringify(body, null, 2)
-            ].join("\n");
-
-            const blob = new Blob([report], { type: "text/plain;charset=utf-8" });
-            const link = document.createElement("a");
-            link.href = URL.createObjectURL(blob);
-            link.download = body?.reportFileName || "youtube-download-request.txt";
-            document.body.appendChild(link);
-            link.click();
-            link.remove();
-            URL.revokeObjectURL(link.href);
         }
 
         function formatChatServiceSuccess(body, elapsedSeconds) {
