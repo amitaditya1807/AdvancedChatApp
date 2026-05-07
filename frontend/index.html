@@ -110,6 +110,12 @@
             transform: translateY(-2px);
         }
 
+        button:disabled {
+            cursor: wait;
+            opacity: 0.68;
+            transform: none;
+        }
+
         .primary {
             color: white;
             background: linear-gradient(135deg, var(--primary), var(--primary-dark));
@@ -277,7 +283,7 @@
                 </p>
                 <div class="actions">
                     <button class="primary" onclick="login()">Continue with Google</button>
-                    <button class="secondary" onclick="callChatService()">Call ChatService</button>
+                    <button id="chatButton" class="secondary" onclick="callChatService()">Call ChatService</button>
                     <button class="danger" onclick="logout()">Logout</button>
                 </div>
             </div>
@@ -331,7 +337,7 @@
             <p class="hint">
                 For deployed frontend login, set AuthService environment variable
                 <code>Frontend__RedirectUrl</code> to your Render frontend URL, for example
-                <code>https://authservicefrontend-r9e3.onrender.com/</code>.
+                <code>https://your-frontend.onrender.com/</code>.
             </p>
         </section>
     </main>
@@ -341,6 +347,7 @@
         const TOKEN_KEY = "advanced_chat_jwt";
 
         const output = document.getElementById("output");
+        const chatButton = document.getElementById("chatButton");
         const sessionText = document.getElementById("sessionText");
         const sessionBadge = document.getElementById("sessionBadge");
         const tokenPreview = document.getElementById("tokenPreview");
@@ -394,7 +401,12 @@
                 return;
             }
 
-            output.textContent = "Calling ChatService through the API Gateway...";
+            const startedAt = performance.now();
+            chatButton.disabled = true;
+            chatButton.textContent = "Getting response...";
+            output.textContent =
+                "⏳ Getting response from ChatService through the API Gateway...\n" +
+                "If the Render service is asleep, the first request can take a little longer while it wakes up.";
 
             try {
                 const response = await fetch(`${API_GATEWAY_URL}/chat`, {
@@ -414,12 +426,29 @@
                 }
 
                 if (!response.ok) {
-                    throw new Error(`Status: ${response.status}\n${JSON.stringify(body, null, 2)}`);
+                    const formattedBody = typeof body === "string"
+                        ? body
+                        : JSON.stringify(body, null, 2);
+
+                    if (response.status === 502) {
+                        throw new Error(
+                            `Status: 502\nThe API Gateway could not reach ChatService. ` +
+                            `Redeploy the gateway with the /chat root route, then make sure the ChatService Render URL is running: ${formattedBody}`
+                        );
+                    }
+
+                    throw new Error(`Status: ${response.status}\n${formattedBody}`);
                 }
 
-                output.textContent = JSON.stringify(body, null, 2);
+                const elapsedSeconds = ((performance.now() - startedAt) / 1000).toFixed(1);
+                output.textContent =
+                    `✅ Got response from ChatService in ${elapsedSeconds}s:\n` +
+                    JSON.stringify(body, null, 2);
             } catch (error) {
                 output.textContent = `❌ ERROR:\n${error.message}`;
+            } finally {
+                chatButton.disabled = false;
+                chatButton.textContent = "Call ChatService";
             }
         }
 
