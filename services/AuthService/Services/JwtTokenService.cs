@@ -22,20 +22,24 @@ public class JwtTokenService : IJwtTokenService
         );
 
         var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
+        var issuedAt = DateTime.UtcNow;
+        var jwtExpiryMinutes = _config.GetValue("Jwt:ExpiryMinutes", 60);
 
         var claims = new List<Claim>
         {
             new(ClaimTypes.NameIdentifier, userId ?? ""),
             new(ClaimTypes.Email, email ?? ""),
             new(ClaimTypes.Name, name ?? ""),
-            new("provider", provider)
+            new("provider", provider),
+            new(JwtRegisteredClaimNames.Iat, EpochTime.GetIntDate(issuedAt).ToString(), ClaimValueTypes.Integer64)
         };
 
         var token = new JwtSecurityToken(
             issuer: _config["Jwt:Issuer"],
             audience: _config["Jwt:Audience"],
             claims: claims,
-            expires: DateTime.UtcNow.AddHours(1),
+            notBefore: issuedAt,
+            expires: issuedAt.AddMinutes(jwtExpiryMinutes),
             signingCredentials: creds
         );
 

@@ -8,4 +8,8 @@ https://localhost:7000/auth/google/login
 
 or
 https://localhost:7001/auth/google/login
-curl -k -H "Authorization: Bearer YOUR_TOKEN" https://localhost:5000/secure
+curl -k -H "Authorization: Bearer YOUR_TOKEN" https://localhost:5000/chat
+
+index file server
+ python3 -m http.server 3000
+ http://127.0.0.1:3000/localindex.html

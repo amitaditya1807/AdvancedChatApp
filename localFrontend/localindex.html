@@ -191,6 +191,84 @@
             font-size: 13px;
         }
 
+        .expiry-panel {
+            width: 100%;
+        }
+
+        .expiry-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            margin-bottom: 10px;
+        }
+
+        .expiry-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 6px 10px;
+            border-radius: 999px;
+            color: var(--muted);
+            background: rgba(148, 163, 184, 0.12);
+            font-size: 12px;
+            font-weight: 800;
+            white-space: nowrap;
+        }
+
+        .expiry-badge.active {
+            color: var(--success);
+            background: rgba(52, 211, 153, 0.12);
+        }
+
+        .expiry-badge.warning {
+            color: var(--warning);
+            background: rgba(251, 191, 36, 0.12);
+        }
+
+        .expiry-badge.expired {
+            color: var(--danger);
+            background: rgba(251, 113, 133, 0.12);
+        }
+
+        .expiry-time {
+            margin-bottom: 6px;
+            color: #e0f2fe;
+            font-size: 18px;
+            font-weight: 900;
+        }
+
+        .expiry-meta {
+            color: var(--muted);
+            font-size: 13px;
+            line-height: 1.45;
+        }
+
+        .expiry-meter {
+            width: 100%;
+            height: 10px;
+            margin-top: 12px;
+            overflow: hidden;
+            border-radius: 999px;
+            background: rgba(148, 163, 184, 0.18);
+        }
+
+        .expiry-meter-fill {
+            width: 0%;
+            height: 100%;
+            border-radius: inherit;
+            background: linear-gradient(90deg, var(--danger), var(--warning), var(--success));
+            transition: width 260ms ease, background 260ms ease;
+        }
+
+        .expiry-meter-fill.warning {
+            background: linear-gradient(90deg, var(--danger), var(--warning));
+        }
+
+        .expiry-meter-fill.expired {
+            background: var(--danger);
+        }
+
         .grid {
             display: grid;
             grid-template-columns: repeat(3, 1fr);
@@ -310,6 +388,20 @@
                         <div id="tokenPreview" class="token-preview">No token stored</div>
                     </div>
                 </div>
+
+                <div class="status-row">
+                    <div class="expiry-panel">
+                        <div class="expiry-header">
+                            <div class="status-label">JWT Expiry</div>
+                            <div id="expiryBadge" class="expiry-badge">No token</div>
+                        </div>
+                        <div id="expiryText" class="expiry-time">Not available</div>
+                        <div id="expiryMeta" class="expiry-meta">Sign in to see token lifetime and countdown.</div>
+                        <div class="expiry-meter" aria-hidden="true">
+                            <div id="expiryProgress" class="expiry-meter-fill"></div>
+                        </div>
+                    </div>
+                </div>
             </aside>
         </section>
 
@@ -334,11 +426,6 @@
                 <button class="secondary" onclick="clearOutput()">Clear</button>
             </div>
             <pre id="output">Ready. Click “Continue with Google” to sign in.</pre>
-            <p class="hint">
-                For deployed frontend login, set AuthService environment variable
-                <code>Frontend__RedirectUrl</code> to your Render frontend URL, for example
-                <code>https://your-frontend.onrender.com/</code>.
-            </p>
         </section>
     </main>
 
@@ -351,11 +438,19 @@
         const sessionText = document.getElementById("sessionText");
         const sessionBadge = document.getElementById("sessionBadge");
         const tokenPreview = document.getElementById("tokenPreview");
+        const expiryBadge = document.getElementById("expiryBadge");
+        const expiryText = document.getElementById("expiryText");
+        const expiryMeta = document.getElementById("expiryMeta");
+        const expiryProgress = document.getElementById("expiryProgress");
         const gatewayUrl = document.getElementById("gatewayUrl");
+
+        const EXPIRING_SOON_SECONDS = 5 * 60;
+        const DEFAULT_TOKEN_LIFETIME_SECONDS = 60 * 60;
 
         gatewayUrl.textContent = API_GATEWAY_URL;
 
         let token = readTokenFromUrl() || localStorage.getItem(TOKEN_KEY) || "";
+        let expiryTimerId = null;
 
         if (token) {
             localStorage.setItem(TOKEN_KEY, token);
@@ -376,10 +471,19 @@
 
         function renderSession() {
             if (!token) {
+                stopTokenExpiryTicker();
                 sessionText.textContent = "Not signed in";
                 sessionBadge.className = "badge";
                 sessionBadge.innerHTML = '<span class="dot"></span>Disconnected';
                 tokenPreview.textContent = "No token stored";
+                resetExpiryVisualization();
+                return;
+            }
+
+            const expiryState = getTokenExpiryState(token);
+
+            if (expiryState.status === "expired") {
+                clearExpiredToken();
                 return;
             }
 
@@ -389,6 +493,131 @@
             tokenPreview.textContent = token.length > 34
                 ? `${token.slice(0, 18)}...${token.slice(-12)}`
                 : token;
+
+            renderTokenExpiry(expiryState);
+            startTokenExpiryTicker();
+        }
+
+        function startTokenExpiryTicker() {
+            if (expiryTimerId) {
+                return;
+            }
+
+            expiryTimerId = window.setInterval(() => {
+                if (!token) {
+                    renderSession();
+                    return;
+                }
+
+                const expiryState = getTokenExpiryState(token);
+
+                if (expiryState.status === "expired") {
+                    clearExpiredToken(true);
+                    return;
+                }
+
+                renderTokenExpiry(expiryState);
+            }, 1000);
+        }
+
+        function stopTokenExpiryTicker() {
+            if (!expiryTimerId) {
+                return;
+            }
+
+            window.clearInterval(expiryTimerId);
+            expiryTimerId = null;
+        }
+
+        function resetExpiryVisualization() {
+            expiryBadge.className = "expiry-badge";
+            expiryBadge.textContent = "No token";
+            expiryText.textContent = "Not available";
+            expiryMeta.textContent = "Sign in to see token lifetime and countdown.";
+            expiryProgress.className = "expiry-meter-fill";
+            expiryProgress.style.width = "0%";
+        }
+
+        function renderTokenExpiry(expiryState) {
+            if (expiryState.status === "unknown") {
+                expiryBadge.className = "expiry-badge";
+                expiryBadge.textContent = "Unknown";
+                expiryText.textContent = "Expiry claim missing";
+                expiryMeta.textContent = "This JWT does not include a readable exp claim.";
+                expiryProgress.className = "expiry-meter-fill warning";
+                expiryProgress.style.width = "100%";
+                return;
+            }
+
+            const isWarning = expiryState.status === "warning";
+            expiryBadge.className = `expiry-badge ${isWarning ? "warning" : "active"}`;
+            expiryBadge.textContent = isWarning ? "Expiring soon" : "Active";
+            expiryText.textContent = formatDuration(expiryState.remainingSeconds);
+            expiryMeta.textContent = `Expires ${expiryState.expiresAt.toLocaleString()} • ${expiryState.remainingPercent}% lifetime remaining`;
+            expiryProgress.className = `expiry-meter-fill${isWarning ? " warning" : ""}`;
+            expiryProgress.style.width = `${expiryState.remainingPercent}%`;
+        }
+
+        function getTokenExpiryState(jwt) {
+            const payload = decodeJwtPayload(jwt);
+            const exp = Number(payload?.exp);
+
+            if (!Number.isFinite(exp)) {
+                return { status: "unknown" };
+            }
+
+            const nowSeconds = Date.now() / 1000;
+            const remainingSeconds = Math.max(0, Math.floor(exp - nowSeconds));
+            const expiresAt = new Date(exp * 1000);
+
+            if (remainingSeconds <= 0) {
+                return { status: "expired", expiresAt, remainingSeconds: 0, remainingPercent: 0 };
+            }
+
+            const issuedAt = Number(payload?.iat);
+            const lifetimeSeconds = Number.isFinite(issuedAt)
+                ? Math.max(1, exp - issuedAt)
+                : DEFAULT_TOKEN_LIFETIME_SECONDS;
+            const remainingPercent = Math.max(1, Math.min(100, Math.round((remainingSeconds / lifetimeSeconds) * 100)));
+
+            return {
+                status: remainingSeconds <= EXPIRING_SOON_SECONDS ? "warning" : "active",
+                expiresAt,
+                remainingSeconds,
+                remainingPercent
+            };
+        }
+
+        function clearExpiredToken(showMessage = false) {
+            localStorage.removeItem(TOKEN_KEY);
+            token = "";
+            stopTokenExpiryTicker();
+            sessionText.textContent = "Session expired";
+            sessionBadge.className = "badge";
+            sessionBadge.innerHTML = '<span class="dot"></span>Expired';
+            tokenPreview.textContent = "Expired token cleared";
+            expiryBadge.className = "expiry-badge expired";
+            expiryBadge.textContent = "Expired";
+            expiryText.textContent = "00:00";
+            expiryMeta.textContent = "Your JWT expired. Sign in again to get a fresh token.";
+            expiryProgress.className = "expiry-meter-fill expired";
+            expiryProgress.style.width = "100%";
+
+            if (showMessage) {
+                output.textContent = "⏰ Session expired. Please sign in with Google again.";
+            }
+        }
+
+        function formatDuration(totalSeconds) {
+            const hours = Math.floor(totalSeconds / 3600);
+            const minutes = Math.floor((totalSeconds % 3600) / 60);
+            const seconds = totalSeconds % 60;
+
+            if (hours > 0) {
+                return `${hours}h ${String(minutes).padStart(2, "0")}m ${String(seconds).padStart(2, "0")}s`;
+            }
+
+            return `${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}`;
         }
 
         function login() {
@@ -398,6 +627,11 @@
         async function callChatService() {
             if (!token) {
                 output.textContent = "❌ Please sign in with Google first.";
+                return;
+            }
+
+            if (getTokenExpiryState(token).status === "expired") {
+                clearExpiredToken(true);
                 return;
             }
 

@@ -17,6 +17,7 @@ builder.Configuration.AddEnvironmentVariables();
 var jwtKey = builder.Configuration["Jwt:Key"];
 var jwtIssuer = builder.Configuration["Jwt:Issuer"];
 var jwtAudience = builder.Configuration["Jwt:Audience"];
+var jwtExpiryMinutes = builder.Configuration.GetValue("Jwt:ExpiryMinutes", 60);
 
 var googleClientId = builder.Configuration["Authentication:Google:ClientId"];
 var googleClientSecret = builder.Configuration["Authentication:Google:ClientSecret"];
@@ -137,12 +138,15 @@ app.MapGet("/auth/success", (HttpContext context) =>
         var email = context.User.FindFirst(ClaimTypes.Email)?.Value ?? "";
         var name = context.User.FindFirst(ClaimTypes.Name)?.Value ?? "";
 
+        var issuedAt = DateTime.UtcNow;
+
         var claims = new[]
         {
             new Claim(ClaimTypes.NameIdentifier, userId),
             new Claim(ClaimTypes.Email, email),
             new Claim(ClaimTypes.Name, name),
-            new Claim("provider", "google")
+            new Claim("provider", "google"),
+            new Claim(JwtRegisteredClaimNames.Iat, EpochTime.GetIntDate(issuedAt).ToString(), ClaimValueTypes.Integer64)
         };
 
         var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtKey));
@@ -152,7 +156,8 @@ app.MapGet("/auth/success", (HttpContext context) =>
             issuer: jwtIssuer ?? "AuthService",
             audience: jwtAudience ?? "AllServices",
             claims: claims,
-            expires: DateTime.UtcNow.AddHours(1),
+            notBefore: issuedAt,
+            expires: issuedAt.AddMinutes(jwtExpiryMinutes),
             signingCredentials: creds
         );
 
