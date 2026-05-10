@@ -12,97 +12,41 @@
             <div class="hero__left">
                 <p class="eyebrow">🚀 API Gateway + Microservices</p>
                 <h1>Advance Chat App</h1>
-                <p class="subtitle">
-                    A clean dashboard to sign in, manage rooms, and send secure chat messages.
-                </p>
+                <p class="subtitle">Create a room once, share Room ID + password, and chat in a separate page.</p>
                 <div class="actions">
                     <button class="primary" onclick="login()">Continue with Google</button>
                     <button id="chatButton" class="secondary" onclick="callChatService()">Check Chat Service</button>
                     <button class="danger" onclick="logout()">Logout</button>
                 </div>
             </div>
-
             <div class="hero__right status-grid">
+                <section class="status-card"><div class="status-label">Session</div><div id="sessionText">Not signed in</div><div id="sessionBadge" class="badge"><span class="dot"></span>Disconnected</div></section>
+                <section class="status-card"><div class="status-label">Gateway</div><div id="gatewayUrl">Loading...</div></section>
+                <section class="status-card"><div class="status-label">JWT Preview</div><div id="tokenPreview" class="token-preview">No token stored</div></section>
                 <section class="status-card">
-                    <div class="status-label">Session</div>
-                    <div id="sessionText">Not signed in</div>
-                    <div id="sessionBadge" class="badge"><span class="dot"></span>Disconnected</div>
-                </section>
-
-                <section class="status-card">
-                    <div class="status-label">Gateway</div>
-                    <div id="gatewayUrl">Loading...</div>
-                </section>
-
-                <section class="status-card">
-                    <div class="status-label">JWT Preview</div>
-                    <div id="tokenPreview" class="token-preview">No token stored</div>
-                </section>
-
-                <section class="status-card">
-                    <div class="status-row">
-                        <div class="status-label">JWT Expiry</div>
-                        <div id="expiryBadge" class="expiry-badge">No token</div>
-                    </div>
+                    <div class="status-row"><div class="status-label">JWT Expiry</div><div id="expiryBadge" class="expiry-badge">No token</div></div>
                     <div id="expiryText" class="expiry-time">Not available</div>
                     <div id="expiryMeta" class="expiry-meta">Sign in to see token lifetime and countdown.</div>
-                    <div class="expiry-meter" aria-hidden="true">
-                        <div id="expiryProgress" class="expiry-meter-fill"></div>
-                    </div>
+                    <div class="expiry-meter" aria-hidden="true"><div id="expiryProgress" class="expiry-meter-fill"></div></div>
                 </section>
             </div>
         </header>
 
-        <section class="steps">
-            <article class="mini-card"><strong>1) Sign in</strong><span>Use Google to get your JWT session token.</span></article>
-            <article class="mini-card"><strong>2) Create or join room</strong><span>Create with name/password, or join by room ID + password.</span></article>
-            <article class="mini-card"><strong>3) Chat instantly</strong><span>Rooms auto-refresh and open directly into chat history.</span></article>
-        </section>
-
         <section class="panel chat-card">
-            <div class="section-title">
-                <h2>Rooms & Messages</h2>
-                <button id="refreshMessagesButton" class="secondary" onclick="refreshActiveRoomMessages()">Refresh Messages</button>
+            <div class="section-title"><h2>Room Access</h2></div>
+            <div class="inline-form">
+                <input id="roomIdInput" type="text" maxlength="120" placeholder="Room ID (or room name for first-time create)" onkeydown="handleRoomInputKey(event)" />
+                <input id="roomPasswordInput" type="password" maxlength="80" placeholder="Room password" onkeydown="handleRoomInputKey(event)" />
+                <button id="enterRoomButton" class="primary" onclick="enterRoom()">Create / Join Room</button>
             </div>
+            <p class="hint">If room exists: joins. If not: creates new room with that name, then opens chat.</p>
 
-            <div class="chat-layout">
-                <div>
-                    <h3 class="subhead">Rooms</h3>
-                    <div id="roomList" class="room-list">
-                        <div class="chat-empty">Sign in, then click “Load Rooms”.</div>
-                    </div>
-                    <div class="inline-form">
-                        <input id="roomNameInput" type="text" maxlength="60" placeholder="New room name" onkeydown="handleRoomInputKey(event)" />
-                        <input id="roomPasswordInput" type="password" maxlength="80" placeholder="Room password" onkeydown="handleRoomInputKey(event)" />
-                        <button id="createRoomButton" class="primary" onclick="createRoom()">Create & Join</button>
-                    </div>
-                    <div class="inline-form">
-                        <input id="joinRoomIdInput" type="text" maxlength="120" placeholder="Room ID" onkeydown="handleJoinInputKey(event)" />
-                        <input id="joinRoomPasswordInput" type="password" maxlength="80" placeholder="Room password" onkeydown="handleJoinInputKey(event)" />
-                        <button id="joinByIdButton" class="secondary" onclick="joinRoomById()">Join by ID</button>
-                    </div>
-                </div>
-
-                <div>
-                    <h3 class="subhead">Messages</h3>
-                    <div id="messageList" class="message-list">
-                        <div class="chat-empty">Join a room to view messages.</div>
-                    </div>
-                    <div class="inline-form">
-                        <input id="messageInput" type="text" maxlength="500" placeholder="Write a message" onkeydown="handleMessageInputKey(event)" />
-                        <button id="sendMessageButton" class="primary" onclick="sendMessage()">Send</button>
-                    </div>
-                </div>
-            </div>
-
-            <p class="hint">Tip: messages auto-refresh every 3 seconds while you stay in a room.</p>
+            <div class="section-title" style="margin-top:16px;"><h2>Your Created Rooms</h2></div>
+            <div id="roomList" class="room-list"><div class="chat-empty">Sign in to load your rooms.</div></div>
         </section>
 
         <section class="panel output-card">
-            <div class="output-header">
-                <h2>API Response</h2>
-                <button class="secondary" onclick="clearOutput()">Clear</button>
-            </div>
+            <div class="output-header"><h2>API Response</h2><button class="secondary" onclick="clearOutput()">Clear</button></div>
             <pre id="output">Welcome! Click “Continue with Google” to get started.</pre>
         </section>
     </main>
