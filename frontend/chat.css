@@ -5,9 +5,19 @@ body { margin:0; font-family: Arial, sans-serif; background:#0b141a; color:#e9ed
 .chat-header p { margin:2px 0 0; color:#aebac1; font-size:12px; }
 .back-btn,.refresh-btn,.composer button { background:#2a3942; color:#e9edef; border:none; border-radius:8px; padding:10px 12px; cursor:pointer; }
 .messages { overflow:auto; padding:14px; display:flex; flex-direction:column; gap:10px; background:#0b141a; }
-.bubble { max-width:70%; padding:9px 12px; border-radius:10px; line-height:1.35; }
+.bubble { max-width:min(70%, 520px); width:fit-content; padding:9px 12px; border-radius:10px; line-height:1.35; word-break:break-word; overflow-wrap:anywhere; }
 .bubble.you { margin-left:auto; background:#005c4b; }
 .bubble.other { margin-right:auto; background:#202c33; }
 .meta { display:block; margin-top:5px; font-size:11px; color:#9fb2bd; }
 .composer { display:flex; gap:8px; padding:10px; background:#202c33; border-top:1px solid #2a3942; }
 .composer input { flex:1; background:#2a3942; border:none; color:#e9edef; border-radius:8px; padding:11px; }
+
+@media (max-width: 640px) {
+  .chat-page { max-width:100%; }
+  .chat-header { padding:10px; gap:8px; }
+  .chat-header h1 { font-size:16px; }
+  .back-btn,.refresh-btn,.composer button { padding:9px 10px; }
+  .messages { padding:10px; }
+  .bubble { max-width:92%; }
+  .composer { padding:8px; }
+}
