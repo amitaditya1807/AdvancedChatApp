@@ -14,7 +14,8 @@ html, body {
   width: 100%;
   max-width: 900px;
   margin: 0 auto;
-  height: 100dvh;
+  height: 100svh;
+  min-height: 100dvh;
   display: grid;
   grid-template-rows: auto minmax(0, 1fr) auto;
   background: #111b21;
@@ -42,6 +43,7 @@ html, body {
   padding: 10px 12px;
   cursor: pointer;
   flex: 0 0 auto;
+  font-size: 16px;
 }
 
 .messages {
@@ -96,6 +98,7 @@ html, body {
   color: #e9edef;
   border-radius: 8px;
   padding: 11px;
+  font-size: 16px;
 }
 
 @media (max-width: 640px) {
