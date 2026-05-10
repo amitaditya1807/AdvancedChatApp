@@ -54,6 +54,35 @@ public static class ChatRoomEndpoints
             }
         });
 
+        group.MapDelete("/{roomId:guid}", async (
+            Guid roomId,
+            HttpContext context,
+            IChatRoomService chatRoomService,
+            CancellationToken cancellationToken) =>
+        {
+            var userId = GetUserId(context);
+
+            if (string.IsNullOrWhiteSpace(userId))
+            {
+                return Results.Unauthorized();
+            }
+
+            try
+            {
+                await chatRoomService.DeleteRoomAsync(roomId, userId, cancellationToken);
+
+                return Results.NoContent();
+            }
+            catch (KeyNotFoundException ex)
+            {
+                return Results.NotFound(new { error = ex.Message });
+            }
+            catch (UnauthorizedAccessException ex)
+            {
+                return Results.Json(new { error = ex.Message }, statusCode: StatusCodes.Status403Forbidden);
+            }
+        });
+
         group.MapGet("/{roomId:guid}/messages", async (
             Guid roomId,
             HttpContext context,
@@ -67,9 +96,24 @@ public static class ChatRoomEndpoints
                 return Results.Unauthorized();
             }
 
-            var messages = await chatRoomService.GetMessagesAsync(roomId, userId, cancellationToken);
+            try
+            {
+                var messages = await chatRoomService.GetMessagesAsync(
+                    roomId,
+                    userId,
+                    GetRoomPassword(context),
+                    cancellationToken);
 
-            return Results.Ok(messages);
+                return Results.Ok(messages);
+            }
+            catch (KeyNotFoundException ex)
+            {
+                return Results.NotFound(new { error = ex.Message });
+            }
+            catch (UnauthorizedAccessException ex)
+            {
+                return Results.Json(new { error = ex.Message }, statusCode: StatusCodes.Status403Forbidden);
+            }
         });
 
         group.MapPost("/{roomId:guid}/messages", async (
@@ -92,6 +136,7 @@ public static class ChatRoomEndpoints
                     roomId,
                     userId,
                     GetSenderName(context),
+                    GetRoomPassword(context),
                     request,
                     cancellationToken);
 
@@ -105,6 +150,10 @@ public static class ChatRoomEndpoints
             {
                 return Results.NotFound(new { error = ex.Message });
             }
+            catch (UnauthorizedAccessException ex)
+            {
+                return Results.Json(new { error = ex.Message }, statusCode: StatusCodes.Status403Forbidden);
+            }
         });
 
         return group;
@@ -113,6 +162,13 @@ public static class ChatRoomEndpoints
     private static string? GetUserId(HttpContext context)
     {
         return context.User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+    }
+
+    private static string? GetRoomPassword(HttpContext context)
+    {
+        return context.Request.Headers.TryGetValue("X-Room-Password", out var password)
+            ? password.ToString()
+            : null;
     }
 
     private static string GetSenderName(HttpContext context)

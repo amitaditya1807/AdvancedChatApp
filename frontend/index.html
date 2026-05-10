@@ -356,19 +356,38 @@
             background: rgba(2, 6, 23, 0.32);
         }
 
+        .room-card {
+            display: grid;
+            grid-template-columns: minmax(0, 1fr) auto;
+            gap: 10px;
+            align-items: stretch;
+            padding: 10px;
+            border: 1px solid transparent;
+            border-radius: 18px;
+            background: rgba(148, 163, 184, 0.10);
+        }
+
+        .room-card.active {
+            border-color: rgba(96, 165, 250, 0.56);
+            background: rgba(37, 99, 235, 0.24);
+        }
+
         .room-item {
             display: grid;
             gap: 8px;
             width: 100%;
+            padding: 8px;
             text-align: left;
             color: var(--text);
-            border: 1px solid transparent;
-            background: rgba(148, 163, 184, 0.10);
+            border: 0;
+            background: transparent;
+            box-shadow: none;
         }
 
-        .room-item.active {
-            border-color: rgba(96, 165, 250, 0.56);
-            background: rgba(37, 99, 235, 0.24);
+        .room-delete {
+            align-self: center;
+            padding: 10px 12px;
+            border-radius: 12px;
         }
 
         .room-name,
@@ -533,6 +552,7 @@
                     </div>
                     <div class="inline-form">
                         <input id="roomNameInput" type="text" maxlength="60" placeholder="New room name" onkeydown="handleRoomInputKey(event)">
+                        <input id="roomPasswordInput" type="password" maxlength="80" placeholder="Room password" onkeydown="handleRoomInputKey(event)">
                         <button id="createRoomButton" class="primary" onclick="createRoom()">Create & Join</button>
                     </div>
                 </div>
@@ -583,6 +603,7 @@
         const roomList = document.getElementById("roomList");
         const messageList = document.getElementById("messageList");
         const roomNameInput = document.getElementById("roomNameInput");
+        const roomPasswordInput = document.getElementById("roomPasswordInput");
         const messageInput = document.getElementById("messageInput");
 
         const EXPIRING_SOON_SECONDS = 5 * 60;
@@ -597,6 +618,7 @@
         let isRefreshingMessages = false;
         let rooms = [];
         let activeRoomId = "";
+        const roomPasswords = new Map();
 
         if (token) {
             localStorage.setItem(TOKEN_KEY, token);
@@ -743,6 +765,7 @@
             token = "";
             rooms = [];
             activeRoomId = "";
+            roomPasswords.clear();
             stopTokenExpiryTicker();
             stopMessagePolling();
             setChatControlsEnabled(false);
@@ -835,10 +858,17 @@
             }
 
             const name = roomNameInput.value.trim();
+            const password = roomPasswordInput.value.trim();
 
             if (!name) {
                 output.textContent = "❌ Enter a room name first.";
                 roomNameInput.focus();
+                return;
+            }
+
+            if (!password) {
+                output.textContent = "❌ Enter a room password first.";
+                roomPasswordInput.focus();
                 return;
             }
 
@@ -848,10 +878,12 @@
             try {
                 const room = await apiRequest("/chat/rooms", {
                     method: "POST",
-                    body: JSON.stringify({ name })
+                    body: JSON.stringify({ name, password })
                 });
 
                 roomNameInput.value = "";
+                roomPasswordInput.value = "";
+                roomPasswords.set(room.id, password);
                 rooms = [...rooms.filter(existingRoom => existingRoom.id !== room.id), room];
                 await joinRoom(room.id);
                 output.textContent = `✅ Created and joined room: ${room.name}`;
@@ -866,6 +898,19 @@
         async function joinRoom(roomId) {
             if (!ensureSignedIn()) {
                 return;
+            }
+
+            const room = rooms.find(existingRoom => existingRoom.id === roomId);
+
+            if (room?.isPasswordProtected && !roomPasswords.has(roomId)) {
+                const password = window.prompt(`Enter password for ${room.name}`);
+
+                if (password === null) {
+                    output.textContent = "🔒 Room join cancelled.";
+                    return;
+                }
+
+                roomPasswords.set(roomId, password);
             }
 
             activeRoomId = roomId;
@@ -901,7 +946,9 @@
             }
 
             try {
-                const messages = await apiRequest(`/chat/rooms/${activeRoomId}/messages`);
+                const messages = await apiRequest(`/chat/rooms/${activeRoomId}/messages`, {
+                    roomPassword: roomPasswords.get(activeRoomId)
+                });
                 renderMessages(messages);
 
                 if (showStatus) {
@@ -909,6 +956,16 @@
                     output.textContent = `✅ Joined ${activeRoom?.name || "room"} and loaded ${messages.length} message${messages.length === 1 ? "" : "s"}. Auto-refresh is on.`;
                 }
             } catch (error) {
+                if (error.message.includes("Status: 403")) {
+                    roomPasswords.delete(activeRoomId);
+
+                    if (showStatus) {
+                        activeRoomId = "";
+                        renderRooms();
+                        renderMessages([]);
+                    }
+                }
+
                 if (showStatus) {
                     output.textContent = `❌ ERROR:\n${error.message}`;
                 } else {
@@ -974,6 +1031,7 @@
             try {
                 await apiRequest(`/chat/rooms/${activeRoomId}/messages`, {
                     method: "POST",
+                    roomPassword: roomPasswords.get(activeRoomId),
                     body: JSON.stringify({ content })
                 });
 
@@ -994,6 +1052,7 @@
                 headers: {
                     "Authorization": `Bearer ${token}`,
                     "Content-Type": "application/json",
+                    ...(options.roomPassword ? { "X-Room-Password": options.roomPassword } : {}),
                     ...(options.headers || {})
                 },
                 body: options.body
@@ -1033,13 +1092,23 @@
                 return;
             }
 
-            roomList.innerHTML = rooms.map(room => `
-                <button class="room-item${room.id === activeRoomId ? " active" : ""}" onclick="joinRoom('${room.id}')">
-                    <span class="room-name">${escapeHtml(room.name)}</span>
-                    <span class="room-meta">${room.id === activeRoomId ? "Joined" : "Click to join"}</span>
-                    <span class="room-meta">Created ${formatDateTime(room.createdAtUtc)}</span>
-                </button>
-            `).join("");
+            const currentUserId = getCurrentUserId();
+
+            roomList.innerHTML = rooms.map(room => {
+                const isOwner = room.createdByUserId === currentUserId;
+                const lockedText = room.isPasswordProtected ? "🔒 Password protected" : "Open room";
+
+                return `
+                    <div class="room-card${room.id === activeRoomId ? " active" : ""}">
+                        <button class="room-item" onclick="joinRoom('${room.id}')">
+                            <span class="room-name">${escapeHtml(room.name)}</span>
+                            <span class="room-meta">${room.id === activeRoomId ? "Joined" : "Click to join"} · ${lockedText}</span>
+                            <span class="room-meta">Created ${formatDateTime(room.createdAtUtc)}</span>
+                        </button>
+                        ${isOwner ? `<button class="danger room-delete" onclick="deleteRoom('${room.id}')">Delete</button>` : ""}
+                    </div>
+                `;
+            }).join("");
         }
 
         function renderMessages(messages) {
@@ -1066,6 +1135,35 @@
                 </article>
             `).join("");
             messageList.scrollTop = messageList.scrollHeight;
+        }
+
+        async function deleteRoom(roomId) {
+            if (!ensureSignedIn()) {
+                return;
+            }
+
+            const roomName = rooms.find(room => room.id === roomId)?.name || "this room";
+
+            if (!window.confirm(`Delete room "${roomName}"? This also removes its messages.`)) {
+                return;
+            }
+
+            try {
+                await apiRequest(`/chat/rooms/${roomId}`, { method: "DELETE" });
+                rooms = rooms.filter(room => room.id !== roomId);
+                roomPasswords.delete(roomId);
+
+                if (activeRoomId === roomId) {
+                    activeRoomId = "";
+                    stopMessagePolling();
+                    renderMessages([]);
+                }
+
+                renderRooms();
+                output.textContent = `✅ Deleted room: ${roomName}`;
+            } catch (error) {
+                output.textContent = `❌ ERROR:\n${error.message}`;
+            }
         }
 
         function formatChatServiceSuccess(body, elapsedSeconds) {
@@ -1123,6 +1221,15 @@
             return true;
         }
 
+        function getCurrentUserId() {
+            const payload = decodeJwtPayload(token);
+
+            return payload?.["http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier"]
+                || payload?.sub
+                || payload?.nameid
+                || "";
+        }
+
         function getUserProfileFromToken() {
             const payload = decodeJwtPayload(token);
             const name = payload?.["http://schemas.xmlsoap.org/ws/2005/05/identity/claims/name"]
@@ -1169,6 +1276,7 @@
             createRoomButton.disabled = !isEnabled;
             sendMessageButton.disabled = !isEnabled;
             roomNameInput.disabled = !isEnabled;
+            roomPasswordInput.disabled = !isEnabled;
             messageInput.disabled = !isEnabled;
         }
 
@@ -1185,11 +1293,16 @@
                 .replace(/'/g, "&#039;");
         }
 
+        function escapeHtmlForAttribute(value) {
+            return escapeHtml(value).replace(/`/g, "&#096;");
+        }
+
         function logout() {
             localStorage.removeItem(TOKEN_KEY);
             token = "";
             rooms = [];
             activeRoomId = "";
+            roomPasswords.clear();
             stopMessagePolling();
             renderRooms();
             renderMessages([]);

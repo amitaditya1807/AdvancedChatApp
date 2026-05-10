@@ -6,7 +6,11 @@ public interface IChatRoomRepository
 {
     Task<IReadOnlyCollection<ChatRoom>> GetRoomsAsync(string userId, CancellationToken cancellationToken = default);
 
+    Task<ChatRoom?> GetRoomAsync(Guid roomId, CancellationToken cancellationToken = default);
+
     Task<ChatRoom> CreateRoomAsync(ChatRoom room, CancellationToken cancellationToken = default);
+
+    Task<bool> DeleteRoomAsync(Guid roomId, CancellationToken cancellationToken = default);
 
     Task<IReadOnlyCollection<ChatMessage>> GetMessagesAsync(Guid roomId, CancellationToken cancellationToken = default);
 

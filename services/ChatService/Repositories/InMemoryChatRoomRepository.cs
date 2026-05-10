@@ -15,7 +15,10 @@ public sealed class InMemoryChatRoomRepository : IChatRoomRepository
             Guid.NewGuid(),
             "General",
             "system",
-            DateTime.UtcNow);
+            DateTime.UtcNow,
+            false,
+            null,
+            null);
 
         _rooms[generalRoom.Id] = generalRoom;
         _messages[generalRoom.Id] = new ConcurrentQueue<ChatMessage>();
@@ -30,12 +33,31 @@ public sealed class InMemoryChatRoomRepository : IChatRoomRepository
         return Task.FromResult<IReadOnlyCollection<ChatRoom>>(rooms);
     }
 
+    public Task<ChatRoom?> GetRoomAsync(Guid roomId, CancellationToken cancellationToken = default)
+    {
+        _rooms.TryGetValue(roomId, out var room);
+
+        return Task.FromResult(room);
+    }
+
     public Task<ChatRoom> CreateRoomAsync(ChatRoom room, CancellationToken cancellationToken = default)
     {
         _rooms[room.Id] = room;
         _messages.TryAdd(room.Id, new ConcurrentQueue<ChatMessage>());
 
         return Task.FromResult(room);
+    }
+
+    public Task<bool> DeleteRoomAsync(Guid roomId, CancellationToken cancellationToken = default)
+    {
+        var roomDeleted = _rooms.TryRemove(roomId, out _);
+
+        if (roomDeleted)
+        {
+            _messages.TryRemove(roomId, out _);
+        }
+
+        return Task.FromResult(roomDeleted);
     }
 
     public Task<IReadOnlyCollection<ChatMessage>> GetMessagesAsync(Guid roomId, CancellationToken cancellationToken = default)
