@@ -1,6 +1,3 @@
-﻿namespace ChatService.Contracts
-{
-    public class CreateRoomRequest
-    {
-    }
-}
+﻿namespace ChatService.Contracts;
+
+public sealed record CreateRoomRequest(string Name);

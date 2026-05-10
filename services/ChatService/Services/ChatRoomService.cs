@@ -14,17 +14,12 @@ public sealed class ChatRoomService : IChatRoomService
         _chatRoomRepository = chatRoomRepository;
     }
 
-    public Task<IReadOnlyCollection<ChatRoom>> GetRoomsAsync(
-        string userId,
-        CancellationToken cancellationToken = default)
+    public Task<IReadOnlyCollection<ChatRoom>> GetRoomsAsync(string userId, CancellationToken cancellationToken = default)
     {
         return _chatRoomRepository.GetRoomsAsync(userId, cancellationToken);
     }
 
-    public Task<ChatRoom> CreateRoomAsync(
-        string userId,
-        CreateRoomRequest request,
-        CancellationToken cancellationToken = default)
+    public Task<ChatRoom> CreateRoomAsync(string userId, CreateRoomRequest request, CancellationToken cancellationToken = default)
     {
         if (string.IsNullOrWhiteSpace(request.Name))
         {
@@ -40,20 +35,12 @@ public sealed class ChatRoomService : IChatRoomService
         return _chatRoomRepository.CreateRoomAsync(room, cancellationToken);
     }
 
-    public Task<IReadOnlyCollection<ChatMessage>> GetMessagesAsync(
-        Guid roomId,
-        string userId,
-        CancellationToken cancellationToken = default)
+    public Task<IReadOnlyCollection<ChatMessage>> GetMessagesAsync(Guid roomId, string userId, CancellationToken cancellationToken = default)
     {
         return _chatRoomRepository.GetMessagesAsync(roomId, cancellationToken);
     }
 
-    public Task<ChatMessage> SendMessageAsync(
-        Guid roomId,
-        string userId,
-        string senderName,
-        SendMessageRequest request,
-        CancellationToken cancellationToken = default)
+    public Task<ChatMessage> SendMessageAsync(Guid roomId, string userId, string senderName, SendMessageRequest request, CancellationToken cancellationToken = default)
     {
         if (string.IsNullOrWhiteSpace(request.Content))
         {

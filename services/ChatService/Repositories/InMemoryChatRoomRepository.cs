@@ -21,9 +21,7 @@ public sealed class InMemoryChatRoomRepository : IChatRoomRepository
         _messages[generalRoom.Id] = new ConcurrentQueue<ChatMessage>();
     }
 
-    public Task<IReadOnlyCollection<ChatRoom>> GetRoomsAsync(
-        string userId,
-        CancellationToken cancellationToken = default)
+    public Task<IReadOnlyCollection<ChatRoom>> GetRoomsAsync(string userId, CancellationToken cancellationToken = default)
     {
         var rooms = _rooms.Values
             .OrderBy(room => room.CreatedAtUtc)
@@ -32,9 +30,7 @@ public sealed class InMemoryChatRoomRepository : IChatRoomRepository
         return Task.FromResult<IReadOnlyCollection<ChatRoom>>(rooms);
     }
 
-    public Task<ChatRoom> CreateRoomAsync(
-        ChatRoom room,
-        CancellationToken cancellationToken = default)
+    public Task<ChatRoom> CreateRoomAsync(ChatRoom room, CancellationToken cancellationToken = default)
     {
         _rooms[room.Id] = room;
         _messages.TryAdd(room.Id, new ConcurrentQueue<ChatMessage>());
@@ -42,14 +38,11 @@ public sealed class InMemoryChatRoomRepository : IChatRoomRepository
         return Task.FromResult(room);
     }
 
-    public Task<IReadOnlyCollection<ChatMessage>> GetMessagesAsync(
-        Guid roomId,
-        CancellationToken cancellationToken = default)
+    public Task<IReadOnlyCollection<ChatMessage>> GetMessagesAsync(Guid roomId, CancellationToken cancellationToken = default)
     {
         if (!_rooms.ContainsKey(roomId))
         {
-            return Task.FromResult<IReadOnlyCollection<ChatMessage>>(
-                Array.Empty<ChatMessage>());
+            return Task.FromResult<IReadOnlyCollection<ChatMessage>>(Array.Empty<ChatMessage>());
         }
 
         var messages = _messages
@@ -60,14 +53,11 @@ public sealed class InMemoryChatRoomRepository : IChatRoomRepository
         return Task.FromResult<IReadOnlyCollection<ChatMessage>>(messages);
     }
 
-    public Task<ChatMessage> AddMessageAsync(
-        ChatMessage message,
-        CancellationToken cancellationToken = default)
+    public Task<ChatMessage> AddMessageAsync(ChatMessage message, CancellationToken cancellationToken = default)
     {
         if (!_rooms.ContainsKey(message.RoomId))
         {
-            throw new KeyNotFoundException(
-                $"Room '{message.RoomId}' was not found.");
+            throw new KeyNotFoundException($"Room '{message.RoomId}' was not found.");
         }
 
         _messages

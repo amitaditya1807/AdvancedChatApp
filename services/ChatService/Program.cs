@@ -74,7 +74,7 @@ app.MapGet("/chat", (HttpContext context) =>
 })
 .RequireAuthorization();
 
-// 🧩 Chat room routes
+// 💬 Chat room routes
 app.MapChatRoomEndpoints();
 
 app.Run();
