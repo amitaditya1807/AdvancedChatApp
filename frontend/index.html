@@ -4,7 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Advance Chat App</title>
-
     <style>
         :root {
             --bg: #0f172a;
@@ -450,18 +449,15 @@
         }
     </style>
 </head>
-
 <body>
     <main class="page">
         <section class="hero">
             <div class="panel intro">
                 <div class="eyebrow">🚀 API Gateway + Microservices</div>
                 <h1>Advance Chat App</h1>
-
                 <p class="subtitle">
                     Sign in with Google, load available rooms, join a room, and send JWT-protected chat messages.
                 </p>
-
                 <div class="actions">
                     <button class="primary" onclick="login()">Continue with Google</button>
                     <button id="chatButton" class="secondary" onclick="callChatService()">Call ChatService</button>
@@ -499,10 +495,8 @@
                             <div class="status-label">JWT Expiry</div>
                             <div id="expiryBadge" class="expiry-badge">No token</div>
                         </div>
-
                         <div id="expiryText" class="expiry-time">Not available</div>
                         <div id="expiryMeta" class="expiry-meta">Sign in to see token lifetime and countdown.</div>
-
                         <div class="expiry-meter" aria-hidden="true">
                             <div id="expiryProgress" class="expiry-meter-fill"></div>
                         </div>
@@ -516,12 +510,10 @@
                 <strong>1. Load rooms</strong>
                 <span>Fetch rooms from the protected ChatService route.</span>
             </div>
-
             <div class="mini-card">
                 <strong>2. Join room</strong>
                 <span>Select a room and load its messages.</span>
             </div>
-
             <div class="mini-card">
                 <strong>3. Chat</strong>
                 <span>Send messages to the selected room using your JWT.</span>
@@ -539,7 +531,6 @@
                     <div id="roomList" class="room-list">
                         <div class="chat-empty">Sign in, then click “Load Rooms”.</div>
                     </div>
-
                     <div class="inline-form">
                         <input id="roomNameInput" type="text" maxlength="60" placeholder="New room name" onkeydown="handleRoomInputKey(event)">
                         <button id="createRoomButton" class="primary" onclick="createRoom()">Create & Join</button>
@@ -550,7 +541,6 @@
                     <div id="messageList" class="message-list">
                         <div class="chat-empty">Join a room to view messages.</div>
                     </div>
-
                     <div class="inline-form">
                         <input id="messageInput" type="text" maxlength="500" placeholder="Write a message" onkeydown="handleMessageInputKey(event)">
                         <button id="sendMessageButton" class="primary" onclick="sendMessage()">Send</button>
@@ -559,7 +549,7 @@
             </div>
 
             <p class="hint">
-                This is still in-memory chat. Rooms and messages reset when ChatService restarts. Redis and Kafka come later.
+                This is still in-memory chat. Messages auto-refresh every 3 seconds while a room is joined. Rooms and messages reset when ChatService restarts. Redis and Kafka come later.
             </p>
         </section>
 
@@ -568,21 +558,12 @@
                 <h2>API Response</h2>
                 <button class="secondary" onclick="clearOutput()">Clear</button>
             </div>
-
             <pre id="output">Ready. Click “Continue with Google” to sign in.</pre>
         </section>
     </main>
 
     <script>
-        // Deployed gateway:
         const API_GATEWAY_URL = "https://apigateway1-khy4.onrender.com";
-
-        // Local gateway:
-        // const API_GATEWAY_URL = "http://localhost:10000";
-
-        // Direct local ChatService:
-        // const API_GATEWAY_URL = "https://localhost:5000";
-
         const TOKEN_KEY = "advanced_chat_jwt";
 
         const output = document.getElementById("output");
@@ -606,11 +587,14 @@
 
         const EXPIRING_SOON_SECONDS = 5 * 60;
         const DEFAULT_TOKEN_LIFETIME_SECONDS = 60 * 60;
+        const MESSAGE_POLL_INTERVAL_MS = 3000;
 
         gatewayUrl.textContent = API_GATEWAY_URL;
 
         let token = readTokenFromUrl() || localStorage.getItem(TOKEN_KEY) || "";
         let expiryTimerId = null;
+        let messagePollTimerId = null;
+        let isRefreshingMessages = false;
         let rooms = [];
         let activeRoomId = "";
 
@@ -625,7 +609,6 @@
         function readTokenFromUrl() {
             const query = new URLSearchParams(window.location.search);
             const hash = new URLSearchParams(window.location.hash.replace(/^#/, ""));
-
             return query.get("token") || hash.get("token") || "";
         }
 
@@ -636,15 +619,13 @@
         function renderSession() {
             if (!token) {
                 stopTokenExpiryTicker();
-
+                stopMessagePolling();
                 sessionText.textContent = "Not signed in";
                 sessionBadge.className = "badge";
                 sessionBadge.innerHTML = '<span class="dot"></span>Disconnected';
                 tokenPreview.textContent = "No token stored";
-
                 resetExpiryVisualization();
                 setChatControlsEnabled(false);
-
                 return;
             }
 
@@ -658,7 +639,6 @@
             sessionText.textContent = "JWT stored in this browser";
             sessionBadge.className = "badge connected";
             sessionBadge.innerHTML = '<span class="dot"></span>Connected';
-
             tokenPreview.textContent = token.length > 34
                 ? `${token.slice(0, 18)}...${token.slice(-12)}`
                 : token;
@@ -720,7 +700,6 @@
             }
 
             const isWarning = expiryState.status === "warning";
-
             expiryBadge.className = `expiry-badge ${isWarning ? "warning" : "active"}`;
             expiryBadge.textContent = isWarning ? "Expiring soon" : "Active";
             expiryText.textContent = formatDuration(expiryState.remainingSeconds);
@@ -742,23 +721,14 @@
             const expiresAt = new Date(exp * 1000);
 
             if (remainingSeconds <= 0) {
-                return {
-                    status: "expired",
-                    expiresAt,
-                    remainingSeconds: 0,
-                    remainingPercent: 0
-                };
+                return { status: "expired", expiresAt, remainingSeconds: 0, remainingPercent: 0 };
             }
 
             const issuedAt = Number(payload?.iat);
             const lifetimeSeconds = Number.isFinite(issuedAt)
                 ? Math.max(1, exp - issuedAt)
                 : DEFAULT_TOKEN_LIFETIME_SECONDS;
-
-            const remainingPercent = Math.max(
-                1,
-                Math.min(100, Math.round((remainingSeconds / lifetimeSeconds) * 100))
-            );
+            const remainingPercent = Math.max(1, Math.min(100, Math.round((remainingSeconds / lifetimeSeconds) * 100)));
 
             return {
                 status: remainingSeconds <= EXPIRING_SOON_SECONDS ? "warning" : "active",
@@ -770,21 +740,18 @@
 
         function clearExpiredToken(showMessage = false) {
             localStorage.removeItem(TOKEN_KEY);
-
             token = "";
             rooms = [];
             activeRoomId = "";
-
             stopTokenExpiryTicker();
+            stopMessagePolling();
             setChatControlsEnabled(false);
             renderRooms();
             renderMessages([]);
-
             sessionText.textContent = "Session expired";
             sessionBadge.className = "badge";
             sessionBadge.innerHTML = '<span class="dot"></span>Expired';
             tokenPreview.textContent = "Expired token cleared";
-
             expiryBadge.className = "expiry-badge expired";
             expiryBadge.textContent = "Expired";
             expiryText.textContent = "00:00";
@@ -819,7 +786,6 @@
             }
 
             const startedAt = performance.now();
-
             chatButton.disabled = true;
             chatButton.textContent = "Getting response...";
             output.textContent = "⏳ Getting response from ChatService through the API Gateway...";
@@ -827,7 +793,6 @@
             try {
                 const body = await apiRequest("/chat");
                 const elapsedSeconds = ((performance.now() - startedAt) / 1000).toFixed(1);
-
                 output.textContent = formatChatServiceSuccess(body, elapsedSeconds);
             } catch (error) {
                 output.textContent = `❌ ERROR:\n${error.message}`;
@@ -849,10 +814,12 @@
             try {
                 rooms = await apiRequest("/chat/rooms");
                 activeRoomId = rooms.some(room => room.id === activeRoomId) ? activeRoomId : "";
-
                 renderRooms();
-                renderMessages([]);
 
+                if (!activeRoomId) {
+                    stopMessagePolling();
+                    renderMessages([]);
+                }
                 output.textContent = formatRoomsSuccess(rooms);
             } catch (error) {
                 output.textContent = `❌ ERROR:\n${error.message}`;
@@ -886,9 +853,7 @@
 
                 roomNameInput.value = "";
                 rooms = [...rooms.filter(existingRoom => existingRoom.id !== room.id), room];
-
                 await joinRoom(room.id);
-
                 output.textContent = `✅ Created and joined room: ${room.name}`;
             } catch (error) {
                 output.textContent = `❌ ERROR:\n${error.message}`;
@@ -905,37 +870,84 @@
 
             activeRoomId = roomId;
             renderRooms();
-
-            await refreshActiveRoomMessages();
+            await refreshActiveRoomMessages(true);
+            startMessagePolling();
         }
 
-        async function refreshActiveRoomMessages() {
+        async function refreshActiveRoomMessages(showStatus = true) {
             if (!ensureSignedIn()) {
                 return;
             }
 
             if (!activeRoomId) {
-                output.textContent = "❌ Join a room first.";
+                stopMessagePolling();
+
+                if (showStatus) {
+                    output.textContent = "❌ Join a room first.";
+                }
+
                 return;
             }
 
-            refreshMessagesButton.disabled = true;
-            refreshMessagesButton.textContent = "Refreshing...";
+            if (isRefreshingMessages) {
+                return;
+            }
+
+            isRefreshingMessages = true;
+
+            if (showStatus) {
+                refreshMessagesButton.disabled = true;
+                refreshMessagesButton.textContent = "Refreshing...";
+            }
 
             try {
                 const messages = await apiRequest(`/chat/rooms/${activeRoomId}/messages`);
-
                 renderMessages(messages);
 
-                const activeRoom = rooms.find(room => room.id === activeRoomId);
-
-                output.textContent = `✅ Joined ${activeRoom?.name || "room"} and loaded ${messages.length} message${messages.length === 1 ? "" : "s"}.`;
+                if (showStatus) {
+                    const activeRoom = rooms.find(room => room.id === activeRoomId);
+                    output.textContent = `✅ Joined ${activeRoom?.name || "room"} and loaded ${messages.length} message${messages.length === 1 ? "" : "s"}. Auto-refresh is on.`;
+                }
             } catch (error) {
-                output.textContent = `❌ ERROR:\n${error.message}`;
+                if (showStatus) {
+                    output.textContent = `❌ ERROR:\n${error.message}`;
+                } else {
+                    console.error("Auto-refresh failed", error);
+                }
             } finally {
-                refreshMessagesButton.disabled = false;
-                refreshMessagesButton.textContent = "Refresh Messages";
+                isRefreshingMessages = false;
+
+                if (showStatus) {
+                    refreshMessagesButton.disabled = false;
+                    refreshMessagesButton.textContent = "Refresh Messages";
+                }
             }
+        }
+
+        function startMessagePolling() {
+            stopMessagePolling();
+
+            if (!activeRoomId || !token) {
+                return;
+            }
+
+            messagePollTimerId = window.setInterval(() => {
+                if (!activeRoomId || !token || getTokenExpiryState(token).status === "expired") {
+                    stopMessagePolling();
+                    return;
+                }
+
+                refreshActiveRoomMessages(false);
+            }, MESSAGE_POLL_INTERVAL_MS);
+        }
+
+        function stopMessagePolling() {
+            if (!messagePollTimerId) {
+                return;
+            }
+
+            window.clearInterval(messagePollTimerId);
+            messagePollTimerId = null;
         }
 
         async function sendMessage() {
@@ -966,9 +978,7 @@
                 });
 
                 messageInput.value = "";
-
-                await refreshActiveRoomMessages();
-
+                await refreshActiveRoomMessages(false);
                 output.textContent = "✅ Message sent.";
             } catch (error) {
                 output.textContent = `❌ ERROR:\n${error.message}`;
@@ -1018,6 +1028,7 @@
             }
 
             if (!rooms.length) {
+                stopMessagePolling();
                 roomList.innerHTML = '<div class="chat-empty">No rooms loaded yet. Click “Load Rooms” or create one.</div>';
                 return;
             }
@@ -1054,17 +1065,14 @@
                     <span class="message-meta">${formatDateTime(message.sentAtUtc)}</span>
                 </article>
             `).join("");
-
             messageList.scrollTop = messageList.scrollHeight;
         }
 
         function formatChatServiceSuccess(body, elapsedSeconds) {
             const profile = getUserProfileFromToken();
-
             const serviceMessage = typeof body?.message === "string"
                 ? body.message.replace(/^Hello\s+.*?,\s*/i, "")
                 : "ChatService accepted your authenticated request.";
-
             const serverTime = body?.time
                 ? new Date(body.time).toLocaleString()
                 : "Not provided";
@@ -1085,12 +1093,7 @@
 
         function formatRoomsSuccess(loadedRooms) {
             if (!Array.isArray(loadedRooms)) {
-                return [
-                    "✅ Rooms endpoint responded",
-                    "",
-                    "Technical response:",
-                    JSON.stringify(loadedRooms, null, 2)
-                ].join("\n");
+                return ["✅ Rooms endpoint responded", "", "Technical response:", JSON.stringify(loadedRooms, null, 2)].join("\n");
             }
 
             if (!loadedRooms.length) {
@@ -1122,30 +1125,21 @@
 
         function getUserProfileFromToken() {
             const payload = decodeJwtPayload(token);
-
             const name = payload?.["http://schemas.xmlsoap.org/ws/2005/05/identity/claims/name"]
                 || payload?.name
                 || "Google user";
-
             const email = payload?.["http://schemas.xmlsoap.org/ws/2005/05/identity/claims/emailaddress"]
                 || payload?.email
                 || "Email not available";
 
-            return {
-                displayName: name,
-                email
-            };
+            return { displayName: name, email };
         }
 
         function decodeJwtPayload(jwt) {
             try {
                 const payload = jwt.split(".")[1];
                 const base64 = payload.replace(/-/g, "+").replace(/_/g, "/");
-                const paddedBase64 = base64.padEnd(
-                    base64.length + ((4 - base64.length % 4) % 4),
-                    "="
-                );
-
+                const paddedBase64 = base64.padEnd(base64.length + ((4 - base64.length % 4) % 4), "=");
                 const json = decodeURIComponent(atob(paddedBase64)
                     .split("")
                     .map((char) => `%${(`00${char.charCodeAt(0).toString(16)}`).slice(-2)}`)
@@ -1193,15 +1187,13 @@
 
         function logout() {
             localStorage.removeItem(TOKEN_KEY);
-
             token = "";
             rooms = [];
             activeRoomId = "";
-
+            stopMessagePolling();
             renderRooms();
             renderMessages([]);
             renderSession();
-
             output.textContent = "👋 Logged out.";
         }
 
