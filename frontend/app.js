@@ -3,7 +3,6 @@ const TOKEN_KEY = "advanced_chat_jwt";
 
 const output = document.getElementById("output");
 const chatButton = document.getElementById("chatButton");
-const roomsButton = document.getElementById("roomsButton");
 const refreshMessagesButton = document.getElementById("refreshMessagesButton");
 const createRoomButton = document.getElementById("createRoomButton");
 const sendMessageButton = document.getElementById("sendMessageButton");
@@ -20,6 +19,9 @@ const messageList = document.getElementById("messageList");
 const roomNameInput = document.getElementById("roomNameInput");
 const roomPasswordInput = document.getElementById("roomPasswordInput");
 const messageInput = document.getElementById("messageInput");
+const joinRoomIdInput = document.getElementById("joinRoomIdInput");
+const joinRoomPasswordInput = document.getElementById("joinRoomPasswordInput");
+const joinByIdButton = document.getElementById("joinByIdButton");
 
 const EXPIRING_SOON_SECONDS = 5 * 60;
 const DEFAULT_TOKEN_LIFETIME_SECONDS = 60 * 60;
@@ -30,6 +32,7 @@ gatewayUrl.textContent = API_GATEWAY_URL;
 let token = readTokenFromUrl() || localStorage.getItem(TOKEN_KEY) || "";
 let expiryTimerId = null;
 let messagePollTimerId = null;
+let roomPollTimerId = null;
 let isRefreshingMessages = false;
 let rooms = [];
 let activeRoomId = "";
@@ -57,6 +60,7 @@ function renderSession() {
     if (!token) {
         stopTokenExpiryTicker();
         stopMessagePolling();
+        stopRoomPolling();
         sessionText.textContent = "Not signed in";
         sessionBadge.className = "badge";
         sessionBadge.innerHTML = '<span class="dot"></span>Disconnected';
@@ -83,6 +87,8 @@ function renderSession() {
     setChatControlsEnabled(true);
     renderTokenExpiry(expiryState);
     startTokenExpiryTicker();
+    loadRooms();
+    startRoomPolling();
 }
 
 function startTokenExpiryTicker() {
@@ -183,6 +189,7 @@ function clearExpiredToken(showMessage = false) {
     roomPasswords.clear();
     stopTokenExpiryTicker();
     stopMessagePolling();
+    stopRoomPolling();
     setChatControlsEnabled(false);
     renderRooms();
     renderMessages([]);
@@ -245,8 +252,6 @@ async function loadRooms() {
         return;
     }
 
-    roomsButton.disabled = true;
-    roomsButton.textContent = "Loading rooms...";
     output.textContent = "⏳ Loading rooms...";
 
     try {
@@ -262,8 +267,6 @@ async function loadRooms() {
     } catch (error) {
         output.textContent = `❌ ERROR:\n${error.message}`;
     } finally {
-        roomsButton.disabled = false;
-        roomsButton.textContent = "Load Rooms";
     }
 }
 
@@ -690,13 +693,15 @@ function handleMessageInputKey(event) {
 }
 
 function setChatControlsEnabled(isEnabled) {
-    roomsButton.disabled = !isEnabled;
     refreshMessagesButton.disabled = !isEnabled;
     createRoomButton.disabled = !isEnabled;
     sendMessageButton.disabled = !isEnabled;
     roomNameInput.disabled = !isEnabled;
     roomPasswordInput.disabled = !isEnabled;
     messageInput.disabled = !isEnabled;
+    joinRoomIdInput.disabled = !isEnabled;
+    joinRoomPasswordInput.disabled = !isEnabled;
+    joinByIdButton.disabled = !isEnabled;
 }
 
 function formatDateTime(value) {
@@ -723,6 +728,7 @@ function logout() {
     activeRoomId = "";
     roomPasswords.clear();
     stopMessagePolling();
+    stopRoomPolling();
     renderRooms();
     renderMessages([]);
     renderSession();
@@ -732,3 +738,25 @@ function logout() {
 function clearOutput() {
     output.textContent = "Ready.";
 }
+
+function startRoomPolling() {
+    stopRoomPolling();
+    if (!token) return;
+    roomPollTimerId = window.setInterval(() => { if (token) loadRooms(); }, 5000);
+}
+function stopRoomPolling() {
+    if (!roomPollTimerId) return;
+    window.clearInterval(roomPollTimerId);
+    roomPollTimerId = null;
+}
+
+function joinRoomById() {
+    if (!ensureSignedIn()) return;
+    const roomId = joinRoomIdInput.value.trim();
+    const password = joinRoomPasswordInput.value.trim();
+    if (!roomId) { output.textContent = "❌ Enter room ID."; return; }
+    if (password) roomPasswords.set(roomId, password);
+    joinRoom(roomId);
+}
+
+function handleJoinInputKey(event) { if (event.key === "Enter") joinRoomById(); }

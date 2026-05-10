@@ -18,7 +18,6 @@
                 <div class="actions">
                     <button class="primary" onclick="login()">Continue with Google</button>
                     <button id="chatButton" class="secondary" onclick="callChatService()">Check Chat Service</button>
-                    <button id="roomsButton" class="secondary" onclick="loadRooms()">Load Rooms</button>
                     <button class="danger" onclick="logout()">Logout</button>
                 </div>
             </div>
@@ -56,8 +55,8 @@
 
         <section class="steps">
             <article class="mini-card"><strong>1) Sign in</strong><span>Use Google to get your JWT session token.</span></article>
-            <article class="mini-card"><strong>2) Load or create a room</strong><span>Fetch protected rooms or create one with a password.</span></article>
-            <article class="mini-card"><strong>3) Join and chat</strong><span>Pick a room, read messages, and send your own.</span></article>
+            <article class="mini-card"><strong>2) Create or join room</strong><span>Create with name/password, or join by room ID + password.</span></article>
+            <article class="mini-card"><strong>3) Chat instantly</strong><span>Rooms auto-refresh and open directly into chat history.</span></article>
         </section>
 
         <section class="panel chat-card">
@@ -76,6 +75,11 @@
                         <input id="roomNameInput" type="text" maxlength="60" placeholder="New room name" onkeydown="handleRoomInputKey(event)" />
                         <input id="roomPasswordInput" type="password" maxlength="80" placeholder="Room password" onkeydown="handleRoomInputKey(event)" />
                         <button id="createRoomButton" class="primary" onclick="createRoom()">Create & Join</button>
+                    </div>
+                    <div class="inline-form">
+                        <input id="joinRoomIdInput" type="text" maxlength="120" placeholder="Room ID" onkeydown="handleJoinInputKey(event)" />
+                        <input id="joinRoomPasswordInput" type="password" maxlength="80" placeholder="Room password" onkeydown="handleJoinInputKey(event)" />
+                        <button id="joinByIdButton" class="secondary" onclick="joinRoomById()">Join by ID</button>
                     </div>
                 </div>
 
