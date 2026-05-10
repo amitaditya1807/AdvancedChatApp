@@ -326,12 +326,16 @@ async function joinRoom(roomId) {
         }
 
         roomPasswords.set(roomId, password);
+        sessionStorage.setItem(`room_password_${roomId}`, password);
     }
 
-    activeRoomId = roomId;
-    renderRooms();
-    await refreshActiveRoomMessages(true);
-    startMessagePolling();
+    const savedPassword = roomPasswords.get(roomId);
+    if (savedPassword) {
+        sessionStorage.setItem(`room_password_${roomId}`, savedPassword);
+    }
+
+    const roomName = room?.name || "Room";
+    window.location.href = `./chat.html?roomId=${encodeURIComponent(roomId)}&roomName=${encodeURIComponent(roomName)}`;
 }
 
 async function refreshActiveRoomMessages(showStatus = true) {
@@ -517,7 +521,7 @@ function renderRooms() {
             <div class="room-card${room.id === activeRoomId ? " active" : ""}">
                 <button class="room-item" onclick="joinRoom('${room.id}')">
                     <span class="room-name">${escapeHtml(room.name)}</span>
-                    <span class="room-meta">${room.id === activeRoomId ? "Joined" : "Click to join"} · ${lockedText}</span>
+                    <span class="room-meta">Open chat · ${lockedText}</span>
                     <span class="room-meta">Created ${formatDateTime(room.createdAtUtc)}</span>
                 </button>
                 ${isOwner ? `<button class="danger room-delete" onclick="deleteRoom('${room.id}')">Delete</button>` : ""}
