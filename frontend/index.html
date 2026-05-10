@@ -6,216 +6,57 @@
     <title>Advance Chat App</title>
     <style>
         :root {
-            color-scheme: dark;
-            --bg: #070b18;
-            --bg-soft: #0f172a;
-            --surface: rgba(15, 23, 42, 0.82);
-            --surface-strong: rgba(15, 23, 42, 0.96);
-            --surface-light: rgba(30, 41, 59, 0.72);
-            --border: rgba(148, 163, 184, 0.2);
-            --border-strong: rgba(148, 163, 184, 0.36);
-            --text: #f8fafc;
+            --bg: #0f172a;
+            --card: rgba(15, 23, 42, 0.76);
+            --card-border: rgba(148, 163, 184, 0.22);
+            --text: #e2e8f0;
             --muted: #94a3b8;
-            --muted-light: #cbd5e1;
-            --primary: #38bdf8;
-            --primary-strong: #2563eb;
-            --secondary: #a78bfa;
+            --primary: #60a5fa;
+            --primary-dark: #2563eb;
             --success: #34d399;
             --danger: #fb7185;
             --warning: #fbbf24;
-            --shadow: rgba(2, 6, 23, 0.52);
             --code: #020617;
-            --radius-xl: 32px;
-            --radius-lg: 24px;
-            --radius-md: 18px;
-            --radius-sm: 12px;
         }
 
         * {
             box-sizing: border-box;
         }
 
-        html {
-            scroll-behavior: smooth;
-        }
-
         body {
-            min-height: 100vh;
             margin: 0;
-            font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+            min-height: 100vh;
+            font-family: Arial, Helvetica, sans-serif;
             color: var(--text);
             background:
-                radial-gradient(circle at 10% 5%, rgba(56, 189, 248, 0.34), transparent 30rem),
-                radial-gradient(circle at 90% 0%, rgba(167, 139, 250, 0.26), transparent 34rem),
-                radial-gradient(circle at 55% 85%, rgba(52, 211, 153, 0.14), transparent 30rem),
-                linear-gradient(135deg, #020617, var(--bg) 42%, #111827);
+                radial-gradient(circle at top left, rgba(96, 165, 250, 0.38), transparent 34rem),
+                radial-gradient(circle at bottom right, rgba(52, 211, 153, 0.22), transparent 30rem),
+                var(--bg);
         }
 
-        body::before {
-            position: fixed;
-            inset: 0;
-            z-index: -1;
-            content: "";
-            opacity: 0.16;
-            pointer-events: none;
-            background-image:
-                linear-gradient(rgba(148, 163, 184, 0.18) 1px, transparent 1px),
-                linear-gradient(90deg, rgba(148, 163, 184, 0.18) 1px, transparent 1px);
-            background-size: 72px 72px;
-            mask-image: linear-gradient(to bottom, black, transparent 88%);
-        }
-
-        button,
-        input {
-            font: inherit;
-        }
-
-        button {
-            border: 0;
-            border-radius: 999px;
-            padding: 13px 18px;
-            color: var(--text);
-            font-size: 14px;
-            font-weight: 850;
-            cursor: pointer;
-            transition: transform 160ms ease, border-color 160ms ease, opacity 160ms ease, box-shadow 160ms ease;
-        }
-
-        button:hover:not(:disabled) {
-            transform: translateY(-2px);
-        }
-
-        button:disabled {
-            cursor: not-allowed;
-            opacity: 0.58;
-            transform: none;
-        }
-
-        input {
-            width: 100%;
-            min-width: 0;
-            border: 1px solid var(--border);
-            border-radius: 16px;
-            padding: 14px 15px;
-            color: var(--text);
-            background: rgba(2, 6, 23, 0.58);
-            outline: none;
-            transition: border-color 160ms ease, box-shadow 160ms ease, background 160ms ease;
-        }
-
-        input:focus {
-            border-color: rgba(56, 189, 248, 0.74);
-            box-shadow: 0 0 0 4px rgba(56, 189, 248, 0.14);
-            background: rgba(2, 6, 23, 0.8);
-        }
-
-        .shell {
-            width: min(1440px, calc(100% - 32px));
+        .page {
+            width: min(1120px, calc(100% - 32px));
             margin: 0 auto;
-            padding: 28px 0 44px;
-        }
-
-        .topbar,
-        .panel,
-        .stat-card,
-        .timeline-card {
-            border: 1px solid var(--border);
-            background: var(--surface);
-            box-shadow: 0 24px 90px var(--shadow);
-            backdrop-filter: blur(22px);
-        }
-
-        .topbar {
-            position: sticky;
-            top: 16px;
-            z-index: 10;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            gap: 16px;
-            margin-bottom: 22px;
-            padding: 14px;
-            border-radius: 999px;
-        }
-
-        .brand {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            min-width: 0;
-        }
-
-        .brand-mark {
-            display: grid;
-            width: 46px;
-            height: 46px;
-            flex: 0 0 auto;
-            place-items: center;
-            border-radius: 16px;
-            background: linear-gradient(135deg, var(--primary), var(--secondary));
-            box-shadow: 0 18px 44px rgba(56, 189, 248, 0.28);
-            font-size: 22px;
-        }
-
-        .brand-title {
-            margin: 0;
-            font-size: 18px;
-            letter-spacing: -0.04em;
-        }
-
-        .brand-subtitle {
-            margin: 2px 0 0;
-            color: var(--muted);
-            font-size: 12px;
-            font-weight: 700;
-        }
-
-        .topbar-actions {
-            display: flex;
-            flex-wrap: wrap;
-            justify-content: flex-end;
-            gap: 10px;
-        }
-
-        .btn-primary {
-            background: linear-gradient(135deg, var(--primary), var(--primary-strong));
-            box-shadow: 0 16px 42px rgba(37, 99, 235, 0.32);
-        }
-
-        .btn-secondary {
-            border: 1px solid var(--border);
-            background: rgba(148, 163, 184, 0.12);
-        }
-
-        .btn-danger {
-            border: 1px solid rgba(251, 113, 133, 0.36);
-            background: rgba(251, 113, 133, 0.18);
-        }
-
-        .hero-grid {
-            display: grid;
-            grid-template-columns: minmax(0, 1.08fr) minmax(330px, 0.92fr);
-            gap: 22px;
-            align-items: stretch;
+            padding: 40px 0;
         }
 
         .hero {
-            position: relative;
-            overflow: hidden;
-            min-height: 430px;
-            padding: 40px;
-            border-radius: var(--radius-xl);
+            display: grid;
+            grid-template-columns: 1.1fr 0.9fr;
+            gap: 24px;
+            align-items: stretch;
         }
 
-        .hero::after {
-            position: absolute;
-            right: -80px;
-            bottom: -130px;
-            width: 360px;
-            height: 360px;
-            content: "";
-            border-radius: 50%;
-            background: radial-gradient(circle, rgba(56, 189, 248, 0.28), transparent 68%);
+        .panel {
+            border: 1px solid var(--card-border);
+            border-radius: 28px;
+            background: var(--card);
+            box-shadow: 0 24px 80px rgba(2, 6, 23, 0.45);
+            backdrop-filter: blur(18px);
+        }
+
+        .intro {
+            padding: 44px;
         }
 
         .eyebrow {
@@ -224,114 +65,127 @@
             gap: 8px;
             margin-bottom: 18px;
             padding: 8px 12px;
-            border: 1px solid rgba(56, 189, 248, 0.34);
+            border: 1px solid rgba(96, 165, 250, 0.36);
             border-radius: 999px;
-            color: #bae6fd;
-            background: rgba(14, 165, 233, 0.14);
-            font-size: 13px;
-            font-weight: 850;
+            color: #bfdbfe;
+            background: rgba(37, 99, 235, 0.18);
+            font-size: 14px;
+            font-weight: 700;
         }
 
         h1 {
-            max-width: 820px;
             margin: 0;
-            font-size: clamp(44px, 7vw, 88px);
-            line-height: 0.92;
-            letter-spacing: -0.075em;
+            font-size: clamp(40px, 7vw, 72px);
+            line-height: 0.96;
+            letter-spacing: -0.06em;
         }
 
-        .hero-copy {
-            max-width: 700px;
-            margin: 24px 0 30px;
-            color: var(--muted-light);
+        .subtitle {
+            max-width: 640px;
+            margin: 22px 0 32px;
+            color: var(--muted);
             font-size: 18px;
-            line-height: 1.75;
+            line-height: 1.7;
         }
 
-        .hero-actions,
-        .inline-form,
-        .message-form {
+        .actions,
+        .inline-form {
             display: flex;
             flex-wrap: wrap;
-            gap: 12px;
-        }
-
-        .hero-actions {
-            margin-bottom: 28px;
-        }
-
-        .feature-list {
-            display: grid;
-            grid-template-columns: repeat(3, minmax(0, 1fr));
-            gap: 12px;
-        }
-
-        .feature-pill {
-            padding: 14px;
-            border: 1px solid var(--border);
-            border-radius: 18px;
-            background: rgba(2, 6, 23, 0.34);
-        }
-
-        .feature-pill strong {
-            display: block;
-            margin-bottom: 5px;
-            font-size: 13px;
-        }
-
-        .feature-pill span {
-            color: var(--muted);
-            font-size: 12px;
-            line-height: 1.45;
-        }
-
-        .status-panel {
-            display: grid;
             gap: 14px;
-            padding: 24px;
-            border-radius: var(--radius-xl);
         }
 
-        .panel-heading {
+        button {
+            border: 0;
+            border-radius: 16px;
+            padding: 14px 18px;
+            font-size: 15px;
+            font-weight: 800;
+            cursor: pointer;
+            transition: transform 160ms ease, opacity 160ms ease, background 160ms ease;
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+        }
+
+        button:disabled {
+            cursor: wait;
+            opacity: 0.68;
+            transform: none;
+        }
+
+        input {
+            min-width: 0;
+            border: 1px solid rgba(148, 163, 184, 0.24);
+            border-radius: 16px;
+            padding: 14px 16px;
+            color: var(--text);
+            background: rgba(2, 6, 23, 0.46);
+            font-size: 15px;
+        }
+
+        input:focus {
+            outline: 2px solid rgba(96, 165, 250, 0.36);
+            border-color: rgba(96, 165, 250, 0.56);
+        }
+
+        .primary {
+            color: white;
+            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+            box-shadow: 0 14px 32px rgba(37, 99, 235, 0.36);
+        }
+
+        .secondary {
+            color: var(--text);
+            border: 1px solid var(--card-border);
+            background: rgba(148, 163, 184, 0.12);
+        }
+
+        .danger {
+            color: white;
+            background: rgba(251, 113, 133, 0.22);
+            border: 1px solid rgba(251, 113, 133, 0.32);
+        }
+
+        .status-card {
+            padding: 28px;
             display: flex;
-            align-items: flex-start;
+            flex-direction: column;
+            gap: 18px;
+        }
+
+        .status-row {
+            display: flex;
+            align-items: center;
             justify-content: space-between;
-            gap: 12px;
+            gap: 16px;
+            padding: 16px;
+            border-radius: 20px;
+            background: rgba(2, 6, 23, 0.42);
         }
 
-        .panel-heading h2,
-        .section-heading h2 {
-            margin: 0;
-            font-size: 20px;
-            letter-spacing: -0.04em;
-        }
-
-        .panel-heading p,
-        .section-heading p {
-            margin: 6px 0 0;
+        .status-label {
             color: var(--muted);
             font-size: 13px;
-            line-height: 1.55;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
         }
 
-        .status-badge,
-        .mini-badge {
+        .badge {
             display: inline-flex;
             align-items: center;
             gap: 8px;
-            white-space: nowrap;
-            border-radius: 999px;
-            font-weight: 850;
-        }
-
-        .status-badge {
             padding: 8px 12px;
+            border-radius: 999px;
             color: var(--danger);
             background: rgba(251, 113, 133, 0.12);
-            font-size: 12px;
+            font-size: 13px;
+            font-weight: 800;
         }
 
-        .status-badge.connected {
+        .badge.connected {
             color: var(--success);
             background: rgba(52, 211, 153, 0.12);
         }
@@ -344,42 +198,64 @@
             box-shadow: 0 0 18px currentColor;
         }
 
-        .info-grid {
-            display: grid;
-            grid-template-columns: repeat(2, minmax(0, 1fr));
+        .token-preview {
+            overflow-wrap: anywhere;
+            color: #cbd5e1;
+            font-family: "Courier New", monospace;
+            font-size: 13px;
+        }
+
+        .expiry-panel {
+            width: 100%;
+        }
+
+        .expiry-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
             gap: 12px;
+            margin-bottom: 10px;
         }
 
-        .info-card {
-            min-height: 110px;
-            padding: 16px;
-            border: 1px solid var(--border);
-            border-radius: var(--radius-md);
-            background: rgba(2, 6, 23, 0.34);
-        }
-
-        .info-label {
+        .expiry-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 6px 10px;
+            border-radius: 999px;
             color: var(--muted);
-            font-size: 11px;
-            font-weight: 900;
-            letter-spacing: 0.08em;
-            text-transform: uppercase;
-        }
-
-        .info-value {
-            margin-top: 8px;
-            color: var(--text);
-            font-size: 16px;
-            font-weight: 900;
-            overflow-wrap: anywhere;
-        }
-
-        .info-meta {
-            margin-top: 7px;
-            color: var(--muted);
+            background: rgba(148, 163, 184, 0.12);
             font-size: 12px;
+            font-weight: 800;
+            white-space: nowrap;
+        }
+
+        .expiry-badge.active {
+            color: var(--success);
+            background: rgba(52, 211, 153, 0.12);
+        }
+
+        .expiry-badge.warning {
+            color: var(--warning);
+            background: rgba(251, 191, 36, 0.12);
+        }
+
+        .expiry-badge.expired {
+            color: var(--danger);
+            background: rgba(251, 113, 133, 0.12);
+        }
+
+        .expiry-time {
+            margin-bottom: 6px;
+            color: #e0f2fe;
+            font-size: 18px;
+            font-weight: 900;
+        }
+
+        .expiry-meta {
+            color: var(--muted);
+            font-size: 13px;
             line-height: 1.45;
-            overflow-wrap: anywhere;
         }
 
         .expiry-meter {
@@ -407,77 +283,77 @@
             background: var(--danger);
         }
 
-        .dashboard-grid {
+        .grid {
             display: grid;
-            grid-template-columns: repeat(4, minmax(0, 1fr));
-            gap: 14px;
-            margin: 22px 0;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 16px;
+            margin: 24px 0;
         }
 
-        .stat-card {
-            padding: 18px;
-            border-radius: var(--radius-lg);
+        .mini-card,
+        .chat-card,
+        .output-card {
+            padding: 24px;
         }
 
-        .stat-icon {
-            display: grid;
-            width: 42px;
-            height: 42px;
-            margin-bottom: 16px;
-            place-items: center;
-            border-radius: 15px;
-            background: rgba(56, 189, 248, 0.14);
-            font-size: 20px;
+        .mini-card {
+            border: 1px solid var(--card-border);
+            border-radius: 22px;
+            background: rgba(15, 23, 42, 0.58);
         }
 
-        .stat-value {
-            font-size: 24px;
-            font-weight: 950;
-            letter-spacing: -0.04em;
+        .mini-card strong {
+            display: block;
+            margin-bottom: 8px;
+            font-size: 15px;
         }
 
-        .stat-label {
-            margin-top: 6px;
+        .mini-card span,
+        .hint,
+        .room-meta,
+        .message-meta {
             color: var(--muted);
-            font-size: 12px;
-            font-weight: 800;
+            font-size: 14px;
+            line-height: 1.5;
         }
 
-        .workspace {
+        .chat-card {
+            margin: 24px 0;
+        }
+
+        .chat-layout {
             display: grid;
-            grid-template-columns: minmax(320px, 0.9fr) minmax(0, 1.4fr);
-            gap: 22px;
-            align-items: start;
+            grid-template-columns: minmax(240px, 0.8fr) minmax(0, 1.2fr);
+            gap: 18px;
         }
 
-        .rooms-panel,
-        .chat-panel,
-        .response-panel {
-            border-radius: var(--radius-xl);
-            overflow: hidden;
-        }
-
-        .section-heading {
+        .section-title,
+        .output-header {
             display: flex;
-            align-items: flex-start;
+            align-items: center;
             justify-content: space-between;
-            gap: 14px;
-            padding: 24px 24px 0;
+            gap: 12px;
+            margin-bottom: 14px;
+        }
+
+        .section-title h2,
+        .output-header h2 {
+            margin: 0;
+            font-size: 20px;
         }
 
         .room-list,
         .message-list {
             display: flex;
             flex-direction: column;
-            gap: 12px;
-            min-height: 360px;
-            max-height: 560px;
-            margin: 18px 24px;
+            gap: 10px;
+            min-height: 260px;
+            max-height: 420px;
             overflow: auto;
-            padding: 14px;
-            border: 1px solid var(--border);
-            border-radius: var(--radius-lg);
-            background: rgba(2, 6, 23, 0.36);
+            padding: 12px;
+            border: 1px solid rgba(148, 163, 184, 0.16);
+            border-radius: 18px;
+            background: rgba(2, 6, 23, 0.32);
         }
 
         .room-card {
@@ -485,16 +361,15 @@
             grid-template-columns: minmax(0, 1fr) auto;
             gap: 10px;
             align-items: stretch;
-            padding: 12px;
+            padding: 10px;
             border: 1px solid transparent;
-            border-radius: 20px;
-            background: rgba(30, 41, 59, 0.66);
+            border-radius: 18px;
+            background: rgba(148, 163, 184, 0.10);
         }
 
         .room-card.active {
-            border-color: rgba(56, 189, 248, 0.68);
-            background: linear-gradient(135deg, rgba(37, 99, 235, 0.24), rgba(14, 165, 233, 0.14));
-            box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06);
+            border-color: rgba(96, 165, 250, 0.56);
+            background: rgba(37, 99, 235, 0.24);
         }
 
         .room-item {
@@ -503,274 +378,144 @@
             width: 100%;
             padding: 8px;
             text-align: left;
+            color: var(--text);
             border: 0;
-            border-radius: 16px;
             background: transparent;
             box-shadow: none;
-        }
-
-        .room-name,
-        .message-author {
-            color: #e0f2fe;
-            font-weight: 950;
-            overflow-wrap: anywhere;
-        }
-
-        .room-meta,
-        .message-meta {
-            display: block;
-            color: var(--muted);
-            font-size: 12px;
-            font-weight: 750;
-            line-height: 1.45;
         }
 
         .room-delete {
             align-self: center;
             padding: 10px 12px;
-            border-radius: 14px;
+            border-radius: 12px;
         }
 
-        .create-room {
-            margin: 0 24px 24px;
-            padding: 16px;
-            border: 1px solid var(--border);
-            border-radius: var(--radius-lg);
-            background: rgba(2, 6, 23, 0.24);
-        }
-
-        .form-title {
-            margin: 0 0 12px;
-            color: var(--muted-light);
-            font-size: 13px;
+        .room-name,
+        .message-author {
+            color: #bfdbfe;
             font-weight: 900;
         }
 
-        .message-list {
-            min-height: 470px;
+        .room-meta,
+        .message-meta {
+            display: block;
+            font-size: 12px;
+            font-weight: 700;
         }
 
         .message-item {
-            width: min(86%, 760px);
-            padding: 14px 16px;
-            border: 1px solid var(--border);
-            border-radius: 18px 18px 18px 6px;
-            background: rgba(15, 23, 42, 0.78);
+            padding: 12px 14px;
+            border: 1px solid rgba(148, 163, 184, 0.16);
+            border-radius: 16px;
+            background: rgba(15, 23, 42, 0.66);
         }
 
         .message-content {
-            margin-top: 7px;
+            margin-top: 6px;
             overflow-wrap: anywhere;
-            color: var(--muted-light);
-            line-height: 1.55;
+            line-height: 1.45;
         }
 
         .chat-empty {
-            display: grid;
-            gap: 10px;
             margin: auto;
             color: var(--muted);
             text-align: center;
-            line-height: 1.55;
+            line-height: 1.5;
         }
 
-        .chat-empty strong {
-            color: var(--muted-light);
+        .inline-form {
+            margin-top: 12px;
         }
 
-        .message-form {
-            margin: 0 24px 24px;
-            padding: 16px;
-            border: 1px solid var(--border);
-            border-radius: var(--radius-lg);
-            background: rgba(2, 6, 23, 0.24);
-        }
-
-        .message-form input,
         .inline-form input {
-            flex: 1 1 180px;
-        }
-
-        .response-panel {
-            margin-top: 22px;
+            flex: 1;
         }
 
         pre {
-            min-height: 220px;
-            margin: 18px 24px 24px;
+            min-height: 180px;
+            margin: 0;
             padding: 18px;
             overflow: auto;
-            border: 1px solid var(--border);
-            border-radius: var(--radius-lg);
+            border: 1px solid rgba(148, 163, 184, 0.16);
+            border-radius: 18px;
             color: #dbeafe;
             background: var(--code);
             white-space: pre-wrap;
-            line-height: 1.6;
-        }
-
-        .mini-badge {
-            padding: 7px 10px;
-            color: var(--muted-light);
-            background: rgba(148, 163, 184, 0.12);
-            font-size: 12px;
-        }
-
-        .help-grid {
-            display: grid;
-            grid-template-columns: repeat(3, minmax(0, 1fr));
-            gap: 14px;
-            margin-top: 22px;
-        }
-
-        .timeline-card {
-            padding: 18px;
-            border-radius: var(--radius-lg);
-        }
-
-        .timeline-card strong {
-            display: block;
-            margin-bottom: 8px;
-        }
-
-        .timeline-card p {
-            margin: 0;
-            color: var(--muted);
-            font-size: 13px;
             line-height: 1.55;
         }
 
-        @media (max-width: 1120px) {
-            .hero-grid,
-            .workspace {
-                grid-template-columns: 1fr;
-            }
-
-            .dashboard-grid {
-                grid-template-columns: repeat(2, minmax(0, 1fr));
-            }
+        .hint {
+            margin-top: 14px;
         }
 
-        @media (max-width: 760px) {
-            .shell {
-                width: min(100% - 20px, 1440px);
-                padding-top: 12px;
-            }
+        .hint code {
+            color: #bfdbfe;
+        }
 
-            .topbar {
-                position: static;
-                align-items: stretch;
-                border-radius: 24px;
-                flex-direction: column;
-            }
-
-            .topbar-actions,
-            .hero-actions,
-            .inline-form,
-            .message-form {
-                flex-direction: column;
-            }
-
-            .topbar-actions button,
-            .hero-actions button,
-            .inline-form button,
-            .message-form button {
-                width: 100%;
-            }
-
+        @media (max-width: 820px) {
             .hero,
-            .status-panel {
-                padding: 24px;
-            }
-
-            .feature-list,
-            .info-grid,
-            .dashboard-grid,
-            .help-grid {
+            .grid,
+            .chat-layout {
                 grid-template-columns: 1fr;
             }
 
-            .section-heading {
-                flex-direction: column;
+            .intro,
+            .status-card,
+            .chat-card,
+            .output-card {
+                padding: 26px;
             }
         }
     </style>
 </head>
 <body>
-    <main class="shell">
-        <nav class="topbar" aria-label="Application navigation">
-            <div class="brand">
-                <div class="brand-mark" aria-hidden="true">✦</div>
-                <div>
-                    <h1 class="brand-title">Advance Chat App</h1>
-                    <p class="brand-subtitle">Secure rooms · JWT auth · API Gateway</p>
-                </div>
-            </div>
-            <div class="topbar-actions">
-                <button id="loginButton" class="btn-primary" onclick="login()">Continue with Google</button>
-                <button id="chatButton" class="btn-secondary" onclick="callChatService()">Health Check</button>
-                <button id="roomsButton" class="btn-secondary" onclick="loadRooms()">Load Rooms</button>
-                <button class="btn-danger" onclick="logout()">Logout</button>
-            </div>
-        </nav>
-
-        <section class="hero-grid">
-            <article class="panel hero">
-                <div class="eyebrow">⚡ Real-time room workspace</div>
-                <h1>Chat rooms that feel fast, private, and organized.</h1>
-                <p class="hero-copy">
-                    Sign in with Google, create password-protected rooms, invite people with the room password,
-                    and manage rooms you own from a cleaner dashboard-style interface.
+    <main class="page">
+        <section class="hero">
+            <div class="panel intro">
+                <div class="eyebrow">🚀 API Gateway + Microservices</div>
+                <h1>Advance Chat App</h1>
+                <p class="subtitle">
+                    Sign in with Google, load available rooms, join a room, and send JWT-protected chat messages.
                 </p>
-                <div class="hero-actions">
-                    <button class="btn-primary" onclick="login()">Start secure session</button>
-                    <button class="btn-secondary" onclick="loadRooms()">Open room directory</button>
-                    <button class="btn-secondary" onclick="refreshActiveRoomMessages()">Sync active room</button>
+                <div class="actions">
+                    <button class="primary" onclick="login()">Continue with Google</button>
+                    <button id="chatButton" class="secondary" onclick="callChatService()">Call ChatService</button>
+                    <button id="roomsButton" class="secondary" onclick="loadRooms()">Load Rooms</button>
+                    <button class="danger" onclick="logout()">Logout</button>
                 </div>
-                <div class="feature-list" aria-label="Feature highlights">
-                    <div class="feature-pill">
-                        <strong>🔐 Protected rooms</strong>
-                        <span>Every new room requires a password before messages can load or send.</span>
-                    </div>
-                    <div class="feature-pill">
-                        <strong>👑 Owner controls</strong>
-                        <span>Only the creator sees the delete action for their room.</span>
-                    </div>
-                    <div class="feature-pill">
-                        <strong>⏱ Auto refresh</strong>
-                        <span>Joined room messages refresh every 3 seconds while your JWT is active.</span>
-                    </div>
-                </div>
-            </article>
+            </div>
 
-            <aside class="panel status-panel" aria-label="Session and system information">
-                <div class="panel-heading">
+            <aside class="panel status-card">
+                <div class="status-row">
                     <div>
-                        <h2>Session Center</h2>
-                        <p>Everything important about your login, token, gateway, and active room.</p>
+                        <div class="status-label">Session</div>
+                        <div id="sessionText">Not signed in</div>
                     </div>
-                    <div id="sessionBadge" class="status-badge"><span class="dot"></span>Disconnected</div>
+                    <div id="sessionBadge" class="badge"><span class="dot"></span>Disconnected</div>
                 </div>
 
-                <div class="info-grid">
-                    <div class="info-card">
-                        <div class="info-label">Session</div>
-                        <div id="sessionText" class="info-value">Not signed in</div>
-                        <div id="userInfo" class="info-meta">Sign in to show your Google profile.</div>
+                <div class="status-row">
+                    <div>
+                        <div class="status-label">Gateway</div>
+                        <div id="gatewayUrl">Loading...</div>
                     </div>
-                    <div class="info-card">
-                        <div class="info-label">Gateway</div>
-                        <div id="gatewayUrl" class="info-value">Loading...</div>
-                        <div class="info-meta">All auth and chat requests go through this gateway.</div>
+                </div>
+
+                <div class="status-row">
+                    <div>
+                        <div class="status-label">JWT Preview</div>
+                        <div id="tokenPreview" class="token-preview">No token stored</div>
                     </div>
-                    <div class="info-card">
-                        <div class="info-label">JWT Preview</div>
-                        <div id="tokenPreview" class="info-value">No token stored</div>
-                        <div id="expiryMeta" class="info-meta">Sign in to see token lifetime.</div>
-                    </div>
-                    <div class="info-card">
-                        <div class="info-label">JWT Expiry</div>
-                        <div id="expiryText" class="info-value">Not available</div>
-                        <div id="expiryBadge" class="info-meta">No token</div>
+                </div>
+
+                <div class="status-row">
+                    <div class="expiry-panel">
+                        <div class="expiry-header">
+                            <div class="status-label">JWT Expiry</div>
+                            <div id="expiryBadge" class="expiry-badge">No token</div>
+                        </div>
+                        <div id="expiryText" class="expiry-time">Not available</div>
+                        <div id="expiryMeta" class="expiry-meta">Sign in to see token lifetime and countdown.</div>
                         <div class="expiry-meter" aria-hidden="true">
                             <div id="expiryProgress" class="expiry-meter-fill"></div>
                         </div>
@@ -779,101 +524,59 @@
             </aside>
         </section>
 
-        <section class="dashboard-grid" aria-label="Chat metrics">
-            <div class="stat-card">
-                <div class="stat-icon">🏠</div>
-                <div id="roomCountStat" class="stat-value">0</div>
-                <div class="stat-label">Rooms loaded</div>
+        <section class="grid">
+            <div class="mini-card">
+                <strong>1. Load rooms</strong>
+                <span>Fetch rooms from the protected ChatService route.</span>
             </div>
-            <div class="stat-card">
-                <div class="stat-icon">💬</div>
-                <div id="messageCountStat" class="stat-value">0</div>
-                <div class="stat-label">Messages in active room</div>
+            <div class="mini-card">
+                <strong>2. Join room</strong>
+                <span>Select a room and load its messages.</span>
             </div>
-            <div class="stat-card">
-                <div class="stat-icon">🔒</div>
-                <div id="protectedRoomStat" class="stat-value">0</div>
-                <div class="stat-label">Protected rooms</div>
-            </div>
-            <div class="stat-card">
-                <div class="stat-icon">🎯</div>
-                <div id="activeRoomStat" class="stat-value">None</div>
-                <div class="stat-label">Active room</div>
+            <div class="mini-card">
+                <strong>3. Chat</strong>
+                <span>Send messages to the selected room using your JWT.</span>
             </div>
         </section>
 
-        <section class="workspace">
-            <aside class="panel rooms-panel">
-                <div class="section-heading">
-                    <div>
-                        <h2>Room Directory</h2>
-                        <p>Load rooms, choose a protected room, or create a new one.</p>
-                    </div>
-                    <span class="mini-badge">Password required</span>
-                </div>
+        <section class="panel chat-card">
+            <div class="section-title">
+                <h2>Rooms & Chat</h2>
+                <button id="refreshMessagesButton" class="secondary" onclick="refreshActiveRoomMessages()">Refresh Messages</button>
+            </div>
 
-                <div id="roomList" class="room-list">
-                    <div class="chat-empty">
-                        <strong>No rooms loaded</strong>
-                        <span>Sign in, then click “Load Rooms”.</span>
-                    </div>
-                </div>
-
-                <div class="create-room">
-                    <p class="form-title">Create a secure room</p>
-                    <div class="inline-form">
-                        <input id="roomNameInput" type="text" maxlength="60" placeholder="Room name" autocomplete="off" onkeydown="handleRoomInputKey(event)">
-                        <input id="roomPasswordInput" type="password" maxlength="80" placeholder="Room password" autocomplete="new-password" onkeydown="handleRoomInputKey(event)">
-                        <button id="createRoomButton" class="btn-primary" onclick="createRoom()">Create & Join</button>
-                    </div>
-                </div>
-            </aside>
-
-            <section class="panel chat-panel">
-                <div class="section-heading">
-                    <div>
-                        <h2 id="activeRoomTitle">Chat Console</h2>
-                        <p id="activeRoomSubtitle">Join a room to read and send messages.</p>
-                    </div>
-                    <button id="refreshMessagesButton" class="btn-secondary" onclick="refreshActiveRoomMessages()">Refresh Messages</button>
-                </div>
-
-                <div id="messageList" class="message-list">
-                    <div class="chat-empty">
-                        <strong>Pick a room to begin</strong>
-                        <span>Protected rooms ask for a password before messages are shown.</span>
-                    </div>
-                </div>
-
-                <div class="message-form">
-                    <input id="messageInput" type="text" maxlength="500" placeholder="Write a message to the active room" autocomplete="off" onkeydown="handleMessageInputKey(event)">
-                    <button id="sendMessageButton" class="btn-primary" onclick="sendMessage()">Send Message</button>
-                </div>
-            </section>
-        </section>
-
-        <section class="help-grid" aria-label="How it works">
-            <article class="timeline-card">
-                <strong>1. Authenticate</strong>
-                <p>Google sign-in returns a JWT to this page. The app stores it locally until logout or expiry.</p>
-            </article>
-            <article class="timeline-card">
-                <strong>2. Join securely</strong>
-                <p>Protected room passwords are sent as the <code>X-Room-Password</code> header for message access.</p>
-            </article>
-            <article class="timeline-card">
-                <strong>3. Manage ownership</strong>
-                <p>Room delete buttons only appear when the room creator matches your JWT user id.</p>
-            </article>
-        </section>
-
-        <section class="panel response-panel">
-            <div class="section-heading">
+            <div class="chat-layout">
                 <div>
-                    <h2>API Response Monitor</h2>
-                    <p>Readable status output for auth, room, and message requests.</p>
+                    <div id="roomList" class="room-list">
+                        <div class="chat-empty">Sign in, then click “Load Rooms”.</div>
+                    </div>
+                    <div class="inline-form">
+                        <input id="roomNameInput" type="text" maxlength="60" placeholder="New room name" onkeydown="handleRoomInputKey(event)">
+                        <input id="roomPasswordInput" type="password" maxlength="80" placeholder="Room password" onkeydown="handleRoomInputKey(event)">
+                        <button id="createRoomButton" class="primary" onclick="createRoom()">Create & Join</button>
+                    </div>
                 </div>
-                <button class="btn-secondary" onclick="clearOutput()">Clear</button>
+
+                <div>
+                    <div id="messageList" class="message-list">
+                        <div class="chat-empty">Join a room to view messages.</div>
+                    </div>
+                    <div class="inline-form">
+                        <input id="messageInput" type="text" maxlength="500" placeholder="Write a message" onkeydown="handleMessageInputKey(event)">
+                        <button id="sendMessageButton" class="primary" onclick="sendMessage()">Send</button>
+                    </div>
+                </div>
+            </div>
+
+            <p class="hint">
+                This is still in-memory chat. Messages auto-refresh every 3 seconds while a room is joined. Rooms and messages reset when ChatService restarts. Redis and Kafka come later.
+            </p>
+        </section>
+
+        <section class="panel output-card">
+            <div class="output-header">
+                <h2>API Response</h2>
+                <button class="secondary" onclick="clearOutput()">Clear</button>
             </div>
             <pre id="output">Ready. Click “Continue with Google” to sign in.</pre>
         </section>
@@ -884,7 +587,6 @@
         const TOKEN_KEY = "advanced_chat_jwt";
 
         const output = document.getElementById("output");
-        const loginButton = document.getElementById("loginButton");
         const chatButton = document.getElementById("chatButton");
         const roomsButton = document.getElementById("roomsButton");
         const refreshMessagesButton = document.getElementById("refreshMessagesButton");
@@ -892,7 +594,6 @@
         const sendMessageButton = document.getElementById("sendMessageButton");
         const sessionText = document.getElementById("sessionText");
         const sessionBadge = document.getElementById("sessionBadge");
-        const userInfo = document.getElementById("userInfo");
         const tokenPreview = document.getElementById("tokenPreview");
         const expiryBadge = document.getElementById("expiryBadge");
         const expiryText = document.getElementById("expiryText");
@@ -904,12 +605,6 @@
         const roomNameInput = document.getElementById("roomNameInput");
         const roomPasswordInput = document.getElementById("roomPasswordInput");
         const messageInput = document.getElementById("messageInput");
-        const roomCountStat = document.getElementById("roomCountStat");
-        const messageCountStat = document.getElementById("messageCountStat");
-        const protectedRoomStat = document.getElementById("protectedRoomStat");
-        const activeRoomStat = document.getElementById("activeRoomStat");
-        const activeRoomTitle = document.getElementById("activeRoomTitle");
-        const activeRoomSubtitle = document.getElementById("activeRoomSubtitle");
 
         const EXPIRING_SOON_SECONDS = 5 * 60;
         const DEFAULT_TOKEN_LIFETIME_SECONDS = 60 * 60;
@@ -923,7 +618,6 @@
         let isRefreshingMessages = false;
         let rooms = [];
         let activeRoomId = "";
-        let activeMessageCount = 0;
         const roomPasswords = new Map();
 
         if (token) {
@@ -933,7 +627,6 @@
 
         renderSession();
         setChatControlsEnabled(Boolean(token));
-        updateDashboardStats();
 
         function readTokenFromUrl() {
             const query = new URLSearchParams(window.location.search);
@@ -950,13 +643,11 @@
                 stopTokenExpiryTicker();
                 stopMessagePolling();
                 sessionText.textContent = "Not signed in";
-                sessionBadge.className = "status-badge";
+                sessionBadge.className = "badge";
                 sessionBadge.innerHTML = '<span class="dot"></span>Disconnected';
-                userInfo.textContent = "Sign in to show your Google profile.";
                 tokenPreview.textContent = "No token stored";
                 resetExpiryVisualization();
                 setChatControlsEnabled(false);
-                updateDashboardStats();
                 return;
             }
 
@@ -967,11 +658,9 @@
                 return;
             }
 
-            const profile = getUserProfileFromToken();
             sessionText.textContent = "JWT stored in this browser";
-            sessionBadge.className = "status-badge connected";
+            sessionBadge.className = "badge connected";
             sessionBadge.innerHTML = '<span class="dot"></span>Connected';
-            userInfo.textContent = `${profile.displayName} • ${profile.email}`;
             tokenPreview.textContent = token.length > 34
                 ? `${token.slice(0, 18)}...${token.slice(-12)}`
                 : token;
@@ -979,7 +668,6 @@
             setChatControlsEnabled(true);
             renderTokenExpiry(expiryState);
             startTokenExpiryTicker();
-            updateDashboardStats();
         }
 
         function startTokenExpiryTicker() {
@@ -1014,17 +702,19 @@
         }
 
         function resetExpiryVisualization() {
+            expiryBadge.className = "expiry-badge";
             expiryBadge.textContent = "No token";
             expiryText.textContent = "Not available";
-            expiryMeta.textContent = "Sign in to see token lifetime.";
+            expiryMeta.textContent = "Sign in to see token lifetime and countdown.";
             expiryProgress.className = "expiry-meter-fill";
             expiryProgress.style.width = "0%";
         }
 
         function renderTokenExpiry(expiryState) {
             if (expiryState.status === "unknown") {
-                expiryBadge.textContent = "Expiry claim missing";
-                expiryText.textContent = "Unknown";
+                expiryBadge.className = "expiry-badge";
+                expiryBadge.textContent = "Unknown";
+                expiryText.textContent = "Expiry claim missing";
                 expiryMeta.textContent = "This JWT does not include a readable exp claim.";
                 expiryProgress.className = "expiry-meter-fill warning";
                 expiryProgress.style.width = "100%";
@@ -1032,7 +722,8 @@
             }
 
             const isWarning = expiryState.status === "warning";
-            expiryBadge.textContent = isWarning ? "Expiring soon" : "Active token";
+            expiryBadge.className = `expiry-badge ${isWarning ? "warning" : "active"}`;
+            expiryBadge.textContent = isWarning ? "Expiring soon" : "Active";
             expiryText.textContent = formatDuration(expiryState.remainingSeconds);
             expiryMeta.textContent = `Expires ${expiryState.expiresAt.toLocaleString()} • ${expiryState.remainingPercent}% lifetime remaining`;
             expiryProgress.className = `expiry-meter-fill${isWarning ? " warning" : ""}`;
@@ -1074,7 +765,6 @@
             token = "";
             rooms = [];
             activeRoomId = "";
-            activeMessageCount = 0;
             roomPasswords.clear();
             stopTokenExpiryTicker();
             stopMessagePolling();
@@ -1082,16 +772,15 @@
             renderRooms();
             renderMessages([]);
             sessionText.textContent = "Session expired";
-            sessionBadge.className = "status-badge";
+            sessionBadge.className = "badge";
             sessionBadge.innerHTML = '<span class="dot"></span>Expired';
-            userInfo.textContent = "Your JWT expired. Sign in again to get a fresh token.";
             tokenPreview.textContent = "Expired token cleared";
+            expiryBadge.className = "expiry-badge expired";
             expiryBadge.textContent = "Expired";
             expiryText.textContent = "00:00";
             expiryMeta.textContent = "Your JWT expired. Sign in again to get a fresh token.";
             expiryProgress.className = "expiry-meter-fill expired";
             expiryProgress.style.width = "100%";
-            updateDashboardStats();
 
             if (showMessage) {
                 output.textContent = "⏰ Session expired. Please sign in with Google again.";
@@ -1111,8 +800,6 @@
         }
 
         function login() {
-            loginButton.disabled = true;
-            loginButton.textContent = "Redirecting...";
             window.location.href = `${API_GATEWAY_URL}/auth/google/login`;
         }
 
@@ -1123,7 +810,7 @@
 
             const startedAt = performance.now();
             chatButton.disabled = true;
-            chatButton.textContent = "Checking...";
+            chatButton.textContent = "Getting response...";
             output.textContent = "⏳ Getting response from ChatService through the API Gateway...";
 
             try {
@@ -1134,7 +821,7 @@
                 output.textContent = `❌ ERROR:\n${error.message}`;
             } finally {
                 chatButton.disabled = false;
-                chatButton.textContent = "Health Check";
+                chatButton.textContent = "Call ChatService";
             }
         }
 
@@ -1144,7 +831,7 @@
             }
 
             roomsButton.disabled = true;
-            roomsButton.textContent = "Loading...";
+            roomsButton.textContent = "Loading rooms...";
             output.textContent = "⏳ Loading rooms...";
 
             try {
@@ -1156,8 +843,6 @@
                     stopMessagePolling();
                     renderMessages([]);
                 }
-
-                updateDashboardStats();
                 output.textContent = formatRoomsSuccess(rooms);
             } catch (error) {
                 output.textContent = `❌ ERROR:\n${error.message}`;
@@ -1201,7 +886,6 @@
                 roomPasswords.set(room.id, password);
                 rooms = [...rooms.filter(existingRoom => existingRoom.id !== room.id), room];
                 await joinRoom(room.id);
-                updateDashboardStats();
                 output.textContent = `✅ Created and joined room: ${room.name}`;
             } catch (error) {
                 output.textContent = `❌ ERROR:\n${error.message}`;
@@ -1231,7 +915,6 @@
 
             activeRoomId = roomId;
             renderRooms();
-            updateDashboardStats();
             await refreshActiveRoomMessages(true);
             startMessagePolling();
         }
@@ -1269,7 +952,7 @@
                 renderMessages(messages);
 
                 if (showStatus) {
-                    const activeRoom = getActiveRoom();
+                    const activeRoom = rooms.find(room => room.id === activeRoomId);
                     output.textContent = `✅ Joined ${activeRoom?.name || "room"} and loaded ${messages.length} message${messages.length === 1 ? "" : "s"}. Auto-refresh is on.`;
                 }
             } catch (error) {
@@ -1359,7 +1042,7 @@
                 output.textContent = `❌ ERROR:\n${error.message}`;
             } finally {
                 sendMessageButton.disabled = false;
-                sendMessageButton.textContent = "Send Message";
+                sendMessageButton.textContent = "Send";
             }
         }
 
@@ -1399,15 +1082,13 @@
 
         function renderRooms() {
             if (!token) {
-                roomList.innerHTML = emptyState("No session yet", "Sign in, then click “Load Rooms” to open the directory.");
-                updateDashboardStats();
+                roomList.innerHTML = '<div class="chat-empty">Sign in, then click “Load Rooms”.</div>';
                 return;
             }
 
             if (!rooms.length) {
                 stopMessagePolling();
-                roomList.innerHTML = emptyState("No rooms loaded", "Click “Load Rooms” or create a secure room below.");
-                updateDashboardStats();
+                roomList.innerHTML = '<div class="chat-empty">No rooms loaded yet. Click “Load Rooms” or create one.</div>';
                 return;
             }
 
@@ -1416,44 +1097,33 @@
             roomList.innerHTML = rooms.map(room => {
                 const isOwner = room.createdByUserId === currentUserId;
                 const lockedText = room.isPasswordProtected ? "🔒 Password protected" : "Open room";
-                const ownerText = isOwner ? " · You own this" : "";
 
                 return `
                     <div class="room-card${room.id === activeRoomId ? " active" : ""}">
                         <button class="room-item" onclick="joinRoom('${room.id}')">
                             <span class="room-name">${escapeHtml(room.name)}</span>
-                            <span class="room-meta">${room.id === activeRoomId ? "Joined" : "Click to join"} · ${lockedText}${ownerText}</span>
+                            <span class="room-meta">${room.id === activeRoomId ? "Joined" : "Click to join"} · ${lockedText}</span>
                             <span class="room-meta">Created ${formatDateTime(room.createdAtUtc)}</span>
                         </button>
-                        ${isOwner ? `<button class="btn-danger room-delete" onclick="deleteRoom('${room.id}')">Delete</button>` : ""}
+                        ${isOwner ? `<button class="danger room-delete" onclick="deleteRoom('${room.id}')">Delete</button>` : ""}
                     </div>
                 `;
             }).join("");
-
-            updateDashboardStats();
         }
 
         function renderMessages(messages) {
-            activeMessageCount = Array.isArray(messages) ? messages.length : 0;
-
             if (!token) {
-                messageList.innerHTML = emptyState("No session yet", "Sign in to view messages.");
-                updateChatHeader();
-                updateDashboardStats();
+                messageList.innerHTML = '<div class="chat-empty">Sign in to view messages.</div>';
                 return;
             }
 
             if (!activeRoomId) {
-                messageList.innerHTML = emptyState("Pick a room to begin", "Protected rooms ask for a password before messages are shown.");
-                updateChatHeader();
-                updateDashboardStats();
+                messageList.innerHTML = '<div class="chat-empty">Join a room to view messages.</div>';
                 return;
             }
 
             if (!messages || messages.length === 0) {
-                messageList.innerHTML = emptyState("No messages yet", "Say hello to start the conversation.");
-                updateChatHeader();
-                updateDashboardStats();
+                messageList.innerHTML = '<div class="chat-empty">No messages yet. Say hello.</div>';
                 return;
             }
 
@@ -1465,8 +1135,6 @@
                 </article>
             `).join("");
             messageList.scrollTop = messageList.scrollHeight;
-            updateChatHeader();
-            updateDashboardStats();
         }
 
         async function deleteRoom(roomId) {
@@ -1487,44 +1155,15 @@
 
                 if (activeRoomId === roomId) {
                     activeRoomId = "";
-                    activeMessageCount = 0;
                     stopMessagePolling();
                     renderMessages([]);
                 }
 
                 renderRooms();
-                updateDashboardStats();
                 output.textContent = `✅ Deleted room: ${roomName}`;
             } catch (error) {
                 output.textContent = `❌ ERROR:\n${error.message}`;
             }
-        }
-
-        function updateChatHeader() {
-            const activeRoom = getActiveRoom();
-
-            activeRoomTitle.textContent = activeRoom ? activeRoom.name : "Chat Console";
-            activeRoomSubtitle.textContent = activeRoom
-                ? `${activeRoom.isPasswordProtected ? "Password protected" : "Open room"} • Created ${formatDateTime(activeRoom.createdAtUtc)} • ${activeMessageCount} message${activeMessageCount === 1 ? "" : "s"}`
-                : "Join a room to read and send messages.";
-        }
-
-        function updateDashboardStats() {
-            const activeRoom = getActiveRoom();
-            roomCountStat.textContent = String(rooms.length);
-            messageCountStat.textContent = String(activeMessageCount);
-            protectedRoomStat.textContent = String(rooms.filter(room => room.isPasswordProtected).length);
-            activeRoomStat.textContent = activeRoom ? activeRoom.name : "None";
-            updateChatHeader();
-        }
-
-        function emptyState(title, detail) {
-            return `
-                <div class="chat-empty">
-                    <strong>${escapeHtml(title)}</strong>
-                    <span>${escapeHtml(detail)}</span>
-                </div>
-            `;
         }
 
         function formatChatServiceSuccess(body, elapsedSeconds) {
@@ -1562,7 +1201,7 @@
             return [
                 `✅ Loaded ${loadedRooms.length} room${loadedRooms.length === 1 ? "" : "s"}`,
                 "",
-                ...loadedRooms.map((room, index) => `${index + 1}. ${room.name} (${room.id})${room.isPasswordProtected ? " 🔒" : ""}`),
+                ...loadedRooms.map((room, index) => `${index + 1}. ${room.name} (${room.id})`),
                 "",
                 "Click any room card to join and load messages."
             ].join("\n");
@@ -1580,10 +1219,6 @@
             }
 
             return true;
-        }
-
-        function getActiveRoom() {
-            return rooms.find(room => room.id === activeRoomId) || null;
         }
 
         function getCurrentUserId() {
@@ -1636,7 +1271,6 @@
         }
 
         function setChatControlsEnabled(isEnabled) {
-            chatButton.disabled = !isEnabled;
             roomsButton.disabled = !isEnabled;
             refreshMessagesButton.disabled = !isEnabled;
             createRoomButton.disabled = !isEnabled;
@@ -1659,12 +1293,15 @@
                 .replace(/'/g, "&#039;");
         }
 
+        function escapeHtmlForAttribute(value) {
+            return escapeHtml(value).replace(/`/g, "&#096;");
+        }
+
         function logout() {
             localStorage.removeItem(TOKEN_KEY);
             token = "";
             rooms = [];
             activeRoomId = "";
-            activeMessageCount = 0;
             roomPasswords.clear();
             stopMessagePolling();
             renderRooms();
