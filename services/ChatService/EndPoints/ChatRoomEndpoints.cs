@@ -50,10 +50,7 @@ public static class ChatRoomEndpoints
             }
             catch (ArgumentException ex)
             {
-                return Results.BadRequest(new
-                {
-                    error = ex.Message
-                });
+                return Results.BadRequest(new { error = ex.Message });
             }
         });
 
@@ -83,7 +80,6 @@ public static class ChatRoomEndpoints
             CancellationToken cancellationToken) =>
         {
             var userId = GetUserId(context);
-            var senderName = GetSenderName(context);
 
             if (string.IsNullOrWhiteSpace(userId))
             {
@@ -95,27 +91,19 @@ public static class ChatRoomEndpoints
                 var message = await chatRoomService.SendMessageAsync(
                     roomId,
                     userId,
-                    senderName,
+                    GetSenderName(context),
                     request,
                     cancellationToken);
 
-                return Results.Created(
-                    $"/chat/rooms/{roomId}/messages/{message.Id}",
-                    message);
+                return Results.Created($"/chat/rooms/{roomId}/messages/{message.Id}", message);
             }
             catch (ArgumentException ex)
             {
-                return Results.BadRequest(new
-                {
-                    error = ex.Message
-                });
+                return Results.BadRequest(new { error = ex.Message });
             }
             catch (KeyNotFoundException ex)
             {
-                return Results.NotFound(new
-                {
-                    error = ex.Message
-                });
+                return Results.NotFound(new { error = ex.Message });
             }
         });
 

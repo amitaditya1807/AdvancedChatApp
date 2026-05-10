@@ -36,7 +36,6 @@ builder.Services.AddAuthentication("Bearer")
     });
 
 builder.Services.AddAuthorization();
-
 builder.Services.AddSingleton<IChatRoomRepository, InMemoryChatRoomRepository>();
 builder.Services.AddScoped<IChatRoomService, ChatRoomService>();
 

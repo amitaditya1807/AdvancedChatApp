@@ -3,7 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>OAuth Preview</title>
+    <title>Advance Chat App</title>
+
     <style>
         :root {
             --bg: #0f172a;
@@ -88,25 +89,24 @@
             line-height: 1.7;
         }
 
-        .actions {
+        .actions,
+        .inline-form {
             display: flex;
             flex-wrap: wrap;
             gap: 14px;
         }
 
-        button,
-        .button-link {
+        button {
             border: 0;
             border-radius: 16px;
             padding: 14px 18px;
             font-size: 15px;
             font-weight: 800;
             cursor: pointer;
-            transition: transform 160ms ease, box-shadow 160ms ease, background 160ms ease;
+            transition: transform 160ms ease, opacity 160ms ease, background 160ms ease;
         }
 
-        button:hover,
-        .button-link:hover {
+        button:hover {
             transform: translateY(-2px);
         }
 
@@ -114,6 +114,21 @@
             cursor: wait;
             opacity: 0.68;
             transform: none;
+        }
+
+        input {
+            min-width: 0;
+            border: 1px solid rgba(148, 163, 184, 0.24);
+            border-radius: 16px;
+            padding: 14px 16px;
+            color: var(--text);
+            background: rgba(2, 6, 23, 0.46);
+            font-size: 15px;
+        }
+
+        input:focus {
+            outline: 2px solid rgba(96, 165, 250, 0.36);
+            border-color: rgba(96, 165, 250, 0.56);
         }
 
         .primary {
@@ -276,8 +291,13 @@
             margin: 24px 0;
         }
 
+        .mini-card,
+        .chat-card,
+        .output-card {
+            padding: 24px;
+        }
+
         .mini-card {
-            padding: 18px;
             border: 1px solid var(--card-border);
             border-radius: 22px;
             background: rgba(15, 23, 42, 0.58);
@@ -289,31 +309,112 @@
             font-size: 15px;
         }
 
-        .mini-card span {
+        .mini-card span,
+        .hint,
+        .room-meta,
+        .message-meta {
             color: var(--muted);
             font-size: 14px;
             line-height: 1.5;
         }
 
-        .output-card {
-            padding: 24px;
+        .chat-card {
+            margin: 24px 0;
         }
 
+        .chat-layout {
+            display: grid;
+            grid-template-columns: minmax(240px, 0.8fr) minmax(0, 1.2fr);
+            gap: 18px;
+        }
+
+        .section-title,
         .output-header {
             display: flex;
-            justify-content: space-between;
             align-items: center;
+            justify-content: space-between;
             gap: 12px;
             margin-bottom: 14px;
         }
 
+        .section-title h2,
         .output-header h2 {
             margin: 0;
             font-size: 20px;
         }
 
+        .room-list,
+        .message-list {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            min-height: 260px;
+            max-height: 420px;
+            overflow: auto;
+            padding: 12px;
+            border: 1px solid rgba(148, 163, 184, 0.16);
+            border-radius: 18px;
+            background: rgba(2, 6, 23, 0.32);
+        }
+
+        .room-item {
+            display: grid;
+            gap: 8px;
+            width: 100%;
+            text-align: left;
+            color: var(--text);
+            border: 1px solid transparent;
+            background: rgba(148, 163, 184, 0.10);
+        }
+
+        .room-item.active {
+            border-color: rgba(96, 165, 250, 0.56);
+            background: rgba(37, 99, 235, 0.24);
+        }
+
+        .room-name,
+        .message-author {
+            color: #bfdbfe;
+            font-weight: 900;
+        }
+
+        .room-meta,
+        .message-meta {
+            display: block;
+            font-size: 12px;
+            font-weight: 700;
+        }
+
+        .message-item {
+            padding: 12px 14px;
+            border: 1px solid rgba(148, 163, 184, 0.16);
+            border-radius: 16px;
+            background: rgba(15, 23, 42, 0.66);
+        }
+
+        .message-content {
+            margin-top: 6px;
+            overflow-wrap: anywhere;
+            line-height: 1.45;
+        }
+
+        .chat-empty {
+            margin: auto;
+            color: var(--muted);
+            text-align: center;
+            line-height: 1.5;
+        }
+
+        .inline-form {
+            margin-top: 12px;
+        }
+
+        .inline-form input {
+            flex: 1;
+        }
+
         pre {
-            min-height: 190px;
+            min-height: 180px;
             margin: 0;
             padding: 18px;
             overflow: auto;
@@ -327,9 +428,6 @@
 
         .hint {
             margin-top: 14px;
-            color: var(--muted);
-            font-size: 14px;
-            line-height: 1.55;
         }
 
         .hint code {
@@ -338,30 +436,36 @@
 
         @media (max-width: 820px) {
             .hero,
-            .grid {
+            .grid,
+            .chat-layout {
                 grid-template-columns: 1fr;
             }
 
             .intro,
-            .status-card {
+            .status-card,
+            .chat-card,
+            .output-card {
                 padding: 26px;
             }
         }
     </style>
 </head>
+
 <body>
     <main class="page">
         <section class="hero">
             <div class="panel intro">
                 <div class="eyebrow">🚀 API Gateway + Microservices</div>
-                <h1>OAuth Preview</h1>
+                <h1>Advance Chat App</h1>
+
                 <p class="subtitle">
-                    Sign in with Google through the Render API Gateway, store your JWT locally,
-                    and call the protected ChatService endpoint from this standalone frontend.
+                    Sign in with Google, load available rooms, join a room, and send JWT-protected chat messages.
                 </p>
+
                 <div class="actions">
                     <button class="primary" onclick="login()">Continue with Google</button>
                     <button id="chatButton" class="secondary" onclick="callChatService()">Call ChatService</button>
+                    <button id="roomsButton" class="secondary" onclick="loadRooms()">Load Rooms</button>
                     <button class="danger" onclick="logout()">Logout</button>
                 </div>
             </div>
@@ -378,7 +482,7 @@
                 <div class="status-row">
                     <div>
                         <div class="status-label">Gateway</div>
-                        <div id="gatewayUrl">https://localhost:7000</div>
+                        <div id="gatewayUrl">Loading...</div>
                     </div>
                 </div>
 
@@ -395,8 +499,10 @@
                             <div class="status-label">JWT Expiry</div>
                             <div id="expiryBadge" class="expiry-badge">No token</div>
                         </div>
+
                         <div id="expiryText" class="expiry-time">Not available</div>
                         <div id="expiryMeta" class="expiry-meta">Sign in to see token lifetime and countdown.</div>
+
                         <div class="expiry-meter" aria-hidden="true">
                             <div id="expiryProgress" class="expiry-meter-fill"></div>
                         </div>
@@ -407,17 +513,54 @@
 
         <section class="grid">
             <div class="mini-card">
-                <strong>1. Frontend</strong>
-                <span>Deploy this folder as a Render Static Site. It only needs this HTML file.</span>
+                <strong>1. Load rooms</strong>
+                <span>Fetch rooms from the protected ChatService route.</span>
             </div>
+
             <div class="mini-card">
-                <strong>2. AuthService</strong>
-                <span>Google redirects to the gateway callback, then AuthService creates the JWT.</span>
+                <strong>2. Join room</strong>
+                <span>Select a room and load its messages.</span>
             </div>
+
             <div class="mini-card">
-                <strong>3. ChatService</strong>
-                <span>The frontend calls the protected chat route with the bearer token.</span>
+                <strong>3. Chat</strong>
+                <span>Send messages to the selected room using your JWT.</span>
             </div>
+        </section>
+
+        <section class="panel chat-card">
+            <div class="section-title">
+                <h2>Rooms & Chat</h2>
+                <button id="refreshMessagesButton" class="secondary" onclick="refreshActiveRoomMessages()">Refresh Messages</button>
+            </div>
+
+            <div class="chat-layout">
+                <div>
+                    <div id="roomList" class="room-list">
+                        <div class="chat-empty">Sign in, then click “Load Rooms”.</div>
+                    </div>
+
+                    <div class="inline-form">
+                        <input id="roomNameInput" type="text" maxlength="60" placeholder="New room name" onkeydown="handleRoomInputKey(event)">
+                        <button id="createRoomButton" class="primary" onclick="createRoom()">Create & Join</button>
+                    </div>
+                </div>
+
+                <div>
+                    <div id="messageList" class="message-list">
+                        <div class="chat-empty">Join a room to view messages.</div>
+                    </div>
+
+                    <div class="inline-form">
+                        <input id="messageInput" type="text" maxlength="500" placeholder="Write a message" onkeydown="handleMessageInputKey(event)">
+                        <button id="sendMessageButton" class="primary" onclick="sendMessage()">Send</button>
+                    </div>
+                </div>
+            </div>
+
+            <p class="hint">
+                This is still in-memory chat. Rooms and messages reset when ChatService restarts. Redis and Kafka come later.
+            </p>
         </section>
 
         <section class="panel output-card">
@@ -425,16 +568,29 @@
                 <h2>API Response</h2>
                 <button class="secondary" onclick="clearOutput()">Clear</button>
             </div>
+
             <pre id="output">Ready. Click “Continue with Google” to sign in.</pre>
         </section>
     </main>
 
     <script>
+        // Deployed gateway:
         const API_GATEWAY_URL = "https://localhost:7000";
+
+        // Local gateway:
+        // const API_GATEWAY_URL = "http://localhost:10000";
+
+        // Direct local ChatService:
+        // const API_GATEWAY_URL = "https://localhost:5000";
+
         const TOKEN_KEY = "advanced_chat_jwt";
 
         const output = document.getElementById("output");
         const chatButton = document.getElementById("chatButton");
+        const roomsButton = document.getElementById("roomsButton");
+        const refreshMessagesButton = document.getElementById("refreshMessagesButton");
+        const createRoomButton = document.getElementById("createRoomButton");
+        const sendMessageButton = document.getElementById("sendMessageButton");
         const sessionText = document.getElementById("sessionText");
         const sessionBadge = document.getElementById("sessionBadge");
         const tokenPreview = document.getElementById("tokenPreview");
@@ -443,6 +599,10 @@
         const expiryMeta = document.getElementById("expiryMeta");
         const expiryProgress = document.getElementById("expiryProgress");
         const gatewayUrl = document.getElementById("gatewayUrl");
+        const roomList = document.getElementById("roomList");
+        const messageList = document.getElementById("messageList");
+        const roomNameInput = document.getElementById("roomNameInput");
+        const messageInput = document.getElementById("messageInput");
 
         const EXPIRING_SOON_SECONDS = 5 * 60;
         const DEFAULT_TOKEN_LIFETIME_SECONDS = 60 * 60;
@@ -451,6 +611,8 @@
 
         let token = readTokenFromUrl() || localStorage.getItem(TOKEN_KEY) || "";
         let expiryTimerId = null;
+        let rooms = [];
+        let activeRoomId = "";
 
         if (token) {
             localStorage.setItem(TOKEN_KEY, token);
@@ -458,10 +620,12 @@
         }
 
         renderSession();
+        setChatControlsEnabled(Boolean(token));
 
         function readTokenFromUrl() {
             const query = new URLSearchParams(window.location.search);
             const hash = new URLSearchParams(window.location.hash.replace(/^#/, ""));
+
             return query.get("token") || hash.get("token") || "";
         }
 
@@ -472,11 +636,15 @@
         function renderSession() {
             if (!token) {
                 stopTokenExpiryTicker();
+
                 sessionText.textContent = "Not signed in";
                 sessionBadge.className = "badge";
                 sessionBadge.innerHTML = '<span class="dot"></span>Disconnected';
                 tokenPreview.textContent = "No token stored";
+
                 resetExpiryVisualization();
+                setChatControlsEnabled(false);
+
                 return;
             }
 
@@ -490,10 +658,12 @@
             sessionText.textContent = "JWT stored in this browser";
             sessionBadge.className = "badge connected";
             sessionBadge.innerHTML = '<span class="dot"></span>Connected';
+
             tokenPreview.textContent = token.length > 34
                 ? `${token.slice(0, 18)}...${token.slice(-12)}`
                 : token;
 
+            setChatControlsEnabled(true);
             renderTokenExpiry(expiryState);
             startTokenExpiryTicker();
         }
@@ -550,6 +720,7 @@
             }
 
             const isWarning = expiryState.status === "warning";
+
             expiryBadge.className = `expiry-badge ${isWarning ? "warning" : "active"}`;
             expiryBadge.textContent = isWarning ? "Expiring soon" : "Active";
             expiryText.textContent = formatDuration(expiryState.remainingSeconds);
@@ -571,14 +742,23 @@
             const expiresAt = new Date(exp * 1000);
 
             if (remainingSeconds <= 0) {
-                return { status: "expired", expiresAt, remainingSeconds: 0, remainingPercent: 0 };
+                return {
+                    status: "expired",
+                    expiresAt,
+                    remainingSeconds: 0,
+                    remainingPercent: 0
+                };
             }
 
             const issuedAt = Number(payload?.iat);
             const lifetimeSeconds = Number.isFinite(issuedAt)
                 ? Math.max(1, exp - issuedAt)
                 : DEFAULT_TOKEN_LIFETIME_SECONDS;
-            const remainingPercent = Math.max(1, Math.min(100, Math.round((remainingSeconds / lifetimeSeconds) * 100)));
+
+            const remainingPercent = Math.max(
+                1,
+                Math.min(100, Math.round((remainingSeconds / lifetimeSeconds) * 100))
+            );
 
             return {
                 status: remainingSeconds <= EXPIRING_SOON_SECONDS ? "warning" : "active",
@@ -590,12 +770,21 @@
 
         function clearExpiredToken(showMessage = false) {
             localStorage.removeItem(TOKEN_KEY);
+
             token = "";
+            rooms = [];
+            activeRoomId = "";
+
             stopTokenExpiryTicker();
+            setChatControlsEnabled(false);
+            renderRooms();
+            renderMessages([]);
+
             sessionText.textContent = "Session expired";
             sessionBadge.className = "badge";
             sessionBadge.innerHTML = '<span class="dot"></span>Expired';
             tokenPreview.textContent = "Expired token cleared";
+
             expiryBadge.className = "expiry-badge expired";
             expiryBadge.textContent = "Expired";
             expiryText.textContent = "00:00";
@@ -625,56 +814,20 @@
         }
 
         async function callChatService() {
-            if (!token) {
-                output.textContent = "❌ Please sign in with Google first.";
-                return;
-            }
-
-            if (getTokenExpiryState(token).status === "expired") {
-                clearExpiredToken(true);
+            if (!ensureSignedIn()) {
                 return;
             }
 
             const startedAt = performance.now();
+
             chatButton.disabled = true;
             chatButton.textContent = "Getting response...";
-            output.textContent =
-                "⏳ Getting response from ChatService through the API Gateway...\n" +
-                "If the Render service is asleep, the first request can take a little longer while it wakes up.";
+            output.textContent = "⏳ Getting response from ChatService through the API Gateway...";
 
             try {
-                const response = await fetch(`${API_GATEWAY_URL}/chat`, {
-                    method: "GET",
-                    headers: {
-                        "Authorization": `Bearer ${token}`
-                    }
-                });
-
-                const text = await response.text();
-                let body;
-
-                try {
-                    body = JSON.parse(text);
-                } catch {
-                    body = text;
-                }
-
-                if (!response.ok) {
-                    const formattedBody = typeof body === "string"
-                        ? body
-                        : JSON.stringify(body, null, 2);
-
-                    if (response.status === 502) {
-                        throw new Error(
-                            `Status: 502\nThe API Gateway could not reach ChatService. ` +
-                            `Redeploy the gateway with the /chat root route, then make sure the ChatService Render URL is running: ${formattedBody}`
-                        );
-                    }
-
-                    throw new Error(`Status: ${response.status}\n${formattedBody}`);
-                }
-
+                const body = await apiRequest("/chat");
                 const elapsedSeconds = ((performance.now() - startedAt) / 1000).toFixed(1);
+
                 output.textContent = formatChatServiceSuccess(body, elapsedSeconds);
             } catch (error) {
                 output.textContent = `❌ ERROR:\n${error.message}`;
@@ -684,11 +837,234 @@
             }
         }
 
+        async function loadRooms() {
+            if (!ensureSignedIn()) {
+                return;
+            }
+
+            roomsButton.disabled = true;
+            roomsButton.textContent = "Loading rooms...";
+            output.textContent = "⏳ Loading rooms...";
+
+            try {
+                rooms = await apiRequest("/chat/rooms");
+                activeRoomId = rooms.some(room => room.id === activeRoomId) ? activeRoomId : "";
+
+                renderRooms();
+                renderMessages([]);
+
+                output.textContent = formatRoomsSuccess(rooms);
+            } catch (error) {
+                output.textContent = `❌ ERROR:\n${error.message}`;
+            } finally {
+                roomsButton.disabled = false;
+                roomsButton.textContent = "Load Rooms";
+            }
+        }
+
+        async function createRoom() {
+            if (!ensureSignedIn()) {
+                return;
+            }
+
+            const name = roomNameInput.value.trim();
+
+            if (!name) {
+                output.textContent = "❌ Enter a room name first.";
+                roomNameInput.focus();
+                return;
+            }
+
+            createRoomButton.disabled = true;
+            createRoomButton.textContent = "Creating...";
+
+            try {
+                const room = await apiRequest("/chat/rooms", {
+                    method: "POST",
+                    body: JSON.stringify({ name })
+                });
+
+                roomNameInput.value = "";
+                rooms = [...rooms.filter(existingRoom => existingRoom.id !== room.id), room];
+
+                await joinRoom(room.id);
+
+                output.textContent = `✅ Created and joined room: ${room.name}`;
+            } catch (error) {
+                output.textContent = `❌ ERROR:\n${error.message}`;
+            } finally {
+                createRoomButton.disabled = false;
+                createRoomButton.textContent = "Create & Join";
+            }
+        }
+
+        async function joinRoom(roomId) {
+            if (!ensureSignedIn()) {
+                return;
+            }
+
+            activeRoomId = roomId;
+            renderRooms();
+
+            await refreshActiveRoomMessages();
+        }
+
+        async function refreshActiveRoomMessages() {
+            if (!ensureSignedIn()) {
+                return;
+            }
+
+            if (!activeRoomId) {
+                output.textContent = "❌ Join a room first.";
+                return;
+            }
+
+            refreshMessagesButton.disabled = true;
+            refreshMessagesButton.textContent = "Refreshing...";
+
+            try {
+                const messages = await apiRequest(`/chat/rooms/${activeRoomId}/messages`);
+
+                renderMessages(messages);
+
+                const activeRoom = rooms.find(room => room.id === activeRoomId);
+
+                output.textContent = `✅ Joined ${activeRoom?.name || "room"} and loaded ${messages.length} message${messages.length === 1 ? "" : "s"}.`;
+            } catch (error) {
+                output.textContent = `❌ ERROR:\n${error.message}`;
+            } finally {
+                refreshMessagesButton.disabled = false;
+                refreshMessagesButton.textContent = "Refresh Messages";
+            }
+        }
+
+        async function sendMessage() {
+            if (!ensureSignedIn()) {
+                return;
+            }
+
+            if (!activeRoomId) {
+                output.textContent = "❌ Join a room before sending a message.";
+                return;
+            }
+
+            const content = messageInput.value.trim();
+
+            if (!content) {
+                output.textContent = "❌ Write a message first.";
+                messageInput.focus();
+                return;
+            }
+
+            sendMessageButton.disabled = true;
+            sendMessageButton.textContent = "Sending...";
+
+            try {
+                await apiRequest(`/chat/rooms/${activeRoomId}/messages`, {
+                    method: "POST",
+                    body: JSON.stringify({ content })
+                });
+
+                messageInput.value = "";
+
+                await refreshActiveRoomMessages();
+
+                output.textContent = "✅ Message sent.";
+            } catch (error) {
+                output.textContent = `❌ ERROR:\n${error.message}`;
+            } finally {
+                sendMessageButton.disabled = false;
+                sendMessageButton.textContent = "Send";
+            }
+        }
+
+        async function apiRequest(path, options = {}) {
+            const response = await fetch(`${API_GATEWAY_URL}${path}`, {
+                method: options.method || "GET",
+                headers: {
+                    "Authorization": `Bearer ${token}`,
+                    "Content-Type": "application/json",
+                    ...(options.headers || {})
+                },
+                body: options.body
+            });
+
+            const text = await response.text();
+            let body = text;
+
+            if (text) {
+                try {
+                    body = JSON.parse(text);
+                } catch {
+                    body = text;
+                }
+            }
+
+            if (!response.ok) {
+                const formattedBody = typeof body === "string"
+                    ? body
+                    : JSON.stringify(body, null, 2);
+
+                throw new Error(`Status: ${response.status}\n${formattedBody}`);
+            }
+
+            return body || null;
+        }
+
+        function renderRooms() {
+            if (!token) {
+                roomList.innerHTML = '<div class="chat-empty">Sign in, then click “Load Rooms”.</div>';
+                return;
+            }
+
+            if (!rooms.length) {
+                roomList.innerHTML = '<div class="chat-empty">No rooms loaded yet. Click “Load Rooms” or create one.</div>';
+                return;
+            }
+
+            roomList.innerHTML = rooms.map(room => `
+                <button class="room-item${room.id === activeRoomId ? " active" : ""}" onclick="joinRoom('${room.id}')">
+                    <span class="room-name">${escapeHtml(room.name)}</span>
+                    <span class="room-meta">${room.id === activeRoomId ? "Joined" : "Click to join"}</span>
+                    <span class="room-meta">Created ${formatDateTime(room.createdAtUtc)}</span>
+                </button>
+            `).join("");
+        }
+
+        function renderMessages(messages) {
+            if (!token) {
+                messageList.innerHTML = '<div class="chat-empty">Sign in to view messages.</div>';
+                return;
+            }
+
+            if (!activeRoomId) {
+                messageList.innerHTML = '<div class="chat-empty">Join a room to view messages.</div>';
+                return;
+            }
+
+            if (!messages || messages.length === 0) {
+                messageList.innerHTML = '<div class="chat-empty">No messages yet. Say hello.</div>';
+                return;
+            }
+
+            messageList.innerHTML = messages.map(message => `
+                <article class="message-item">
+                    <div class="message-author">${escapeHtml(message.senderName)}</div>
+                    <div class="message-content">${escapeHtml(message.content)}</div>
+                    <span class="message-meta">${formatDateTime(message.sentAtUtc)}</span>
+                </article>
+            `).join("");
+
+            messageList.scrollTop = messageList.scrollHeight;
+        }
+
         function formatChatServiceSuccess(body, elapsedSeconds) {
             const profile = getUserProfileFromToken();
+
             const serviceMessage = typeof body?.message === "string"
                 ? body.message.replace(/^Hello\s+.*?,\s*/i, "")
                 : "ChatService accepted your authenticated request.";
+
             const serverTime = body?.time
                 ? new Date(body.time).toLocaleString()
                 : "Not provided";
@@ -702,30 +1078,74 @@
                 `⚡ Gateway response time: ${elapsedSeconds}s`,
                 `🕒 Server time: ${serverTime}`,
                 "",
-                "You can now use this JWT-protected connection for chat features like loading conversations, sending messages, or joining rooms.",
-                "",
                 "Technical response:",
                 JSON.stringify(body, null, 2)
             ].join("\n");
         }
 
+        function formatRoomsSuccess(loadedRooms) {
+            if (!Array.isArray(loadedRooms)) {
+                return [
+                    "✅ Rooms endpoint responded",
+                    "",
+                    "Technical response:",
+                    JSON.stringify(loadedRooms, null, 2)
+                ].join("\n");
+            }
+
+            if (!loadedRooms.length) {
+                return "✅ Rooms loaded\n\nNo rooms found yet.";
+            }
+
+            return [
+                `✅ Loaded ${loadedRooms.length} room${loadedRooms.length === 1 ? "" : "s"}`,
+                "",
+                ...loadedRooms.map((room, index) => `${index + 1}. ${room.name} (${room.id})`),
+                "",
+                "Click any room card to join and load messages."
+            ].join("\n");
+        }
+
+        function ensureSignedIn() {
+            if (!token) {
+                output.textContent = "❌ Please sign in with Google first.";
+                return false;
+            }
+
+            if (getTokenExpiryState(token).status === "expired") {
+                clearExpiredToken(true);
+                return false;
+            }
+
+            return true;
+        }
+
         function getUserProfileFromToken() {
             const payload = decodeJwtPayload(token);
+
             const name = payload?.["http://schemas.xmlsoap.org/ws/2005/05/identity/claims/name"]
                 || payload?.name
                 || "Google user";
+
             const email = payload?.["http://schemas.xmlsoap.org/ws/2005/05/identity/claims/emailaddress"]
                 || payload?.email
                 || "Email not available";
 
-            return { displayName: name, email };
+            return {
+                displayName: name,
+                email
+            };
         }
 
         function decodeJwtPayload(jwt) {
             try {
                 const payload = jwt.split(".")[1];
                 const base64 = payload.replace(/-/g, "+").replace(/_/g, "/");
-                const paddedBase64 = base64.padEnd(base64.length + ((4 - base64.length % 4) % 4), "=");
+                const paddedBase64 = base64.padEnd(
+                    base64.length + ((4 - base64.length % 4) % 4),
+                    "="
+                );
+
                 const json = decodeURIComponent(atob(paddedBase64)
                     .split("")
                     .map((char) => `%${(`00${char.charCodeAt(0).toString(16)}`).slice(-2)}`)
@@ -737,10 +1157,51 @@
             }
         }
 
+        function handleRoomInputKey(event) {
+            if (event.key === "Enter") {
+                createRoom();
+            }
+        }
+
+        function handleMessageInputKey(event) {
+            if (event.key === "Enter") {
+                sendMessage();
+            }
+        }
+
+        function setChatControlsEnabled(isEnabled) {
+            roomsButton.disabled = !isEnabled;
+            refreshMessagesButton.disabled = !isEnabled;
+            createRoomButton.disabled = !isEnabled;
+            sendMessageButton.disabled = !isEnabled;
+            roomNameInput.disabled = !isEnabled;
+            messageInput.disabled = !isEnabled;
+        }
+
+        function formatDateTime(value) {
+            return value ? new Date(value).toLocaleString() : "Unknown time";
+        }
+
+        function escapeHtml(value) {
+            return String(value)
+                .replace(/&/g, "&amp;")
+                .replace(/</g, "&lt;")
+                .replace(/>/g, "&gt;")
+                .replace(/"/g, "&quot;")
+                .replace(/'/g, "&#039;");
+        }
+
         function logout() {
             localStorage.removeItem(TOKEN_KEY);
+
             token = "";
+            rooms = [];
+            activeRoomId = "";
+
+            renderRooms();
+            renderMessages([]);
             renderSession();
+
             output.textContent = "👋 Logged out.";
         }
 
