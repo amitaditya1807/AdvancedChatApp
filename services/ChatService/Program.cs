@@ -1,4 +1,9 @@
-﻿using Microsoft.AspNetCore.Authentication.JwtBearer;
+﻿using ChatService.Endpoints;
+using ChatService.Repositories;
+using ChatService.Repositories.Interfaces;
+using ChatService.Services;
+using ChatService.Services.Interfaces;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using System.Security.Claims;
 using System.Text;
@@ -31,6 +36,9 @@ builder.Services.AddAuthentication("Bearer")
     });
 
 builder.Services.AddAuthorization();
+
+builder.Services.AddSingleton<IChatRoomRepository, InMemoryChatRoomRepository>();
+builder.Services.AddScoped<IChatRoomService, ChatRoomService>();
 
 // 🌐 CORS (important for frontend)
 builder.Services.AddCors(options =>
@@ -65,5 +73,8 @@ app.MapGet("/chat", (HttpContext context) =>
     });
 })
 .RequireAuthorization();
+
+// 🧩 Chat room routes
+app.MapChatRoomEndpoints();
 
 app.Run();
