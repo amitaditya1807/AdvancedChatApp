@@ -128,7 +128,7 @@ async function enterRoom() {
 
     sessionStorage.setItem(`room_password_${room.id}`, password);
     participantsByRoom.set(room.id, []);
-    window.location.href = `./chat.html?roomId=${encodeURIComponent(room.id)}&roomName=${encodeURIComponent(room.name || "Room")}`;
+    window.location.href = `./chat/index.html?roomId=${encodeURIComponent(room.id)}&roomName=${encodeURIComponent(room.name || "Room")}`;
   } catch (error) {
     output.textContent = `❌ ERROR:\n${error.message}`;
   } finally {
@@ -162,7 +162,7 @@ function openExistingRoom(roomId, roomName) {
   if (pass === null) return;
   sessionStorage.setItem(`room_password_${roomId}`, pass);
   participantsByRoom.set(roomId, []);
-  window.location.href = `./chat.html?roomId=${encodeURIComponent(roomId)}&roomName=${encodeURIComponent(roomName || "Room")}`;
+  window.location.href = `./chat/index.html?roomId=${encodeURIComponent(roomId)}&roomName=${encodeURIComponent(roomName || "Room")}`;
 }
 
 async function deleteRoom(roomId) {
