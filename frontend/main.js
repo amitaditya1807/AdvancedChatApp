@@ -3,12 +3,15 @@ const TOKEN_KEY = "advanced_chat_jwt";
 
 const output = document.getElementById("output");
 const chatButton = document.getElementById("chatButton");
+const roomServiceButton = document.getElementById("roomServiceButton");
 const sessionText = document.getElementById("sessionText");
 const sessionBadge = document.getElementById("sessionBadge");
 const tokenPreview = document.getElementById("tokenPreview");
 const gatewayUrl = document.getElementById("gatewayUrl");
 
 gatewayUrl.textContent = API_GATEWAY_URL;
+
+const authRequired = new URLSearchParams(window.location.search).get("authRequired");
 
 let token = readTokenFromUrl() || localStorage.getItem(TOKEN_KEY) || "";
 if (token) {
@@ -17,6 +20,10 @@ if (token) {
 }
 
 renderSession();
+
+if (authRequired === "room" && !token) {
+  output.textContent = "❌ Please sign in with Google before opening Room Service.";
+}
 
 function readTokenFromUrl() {
   const query = new URLSearchParams(window.location.search);
@@ -34,6 +41,7 @@ function renderSession() {
     sessionBadge.className = "badge";
     sessionBadge.innerHTML = '<span class="dot"></span>Disconnected';
     tokenPreview.textContent = "No token stored";
+    roomServiceButton.disabled = true;
     return;
   }
 
@@ -41,10 +49,20 @@ function renderSession() {
   sessionBadge.className = "badge connected";
   sessionBadge.innerHTML = '<span class="dot"></span>Connected';
   tokenPreview.textContent = token.length > 34 ? `${token.slice(0, 18)}...${token.slice(-12)}` : token;
+  roomServiceButton.disabled = false;
 }
 
 function login() {
   window.location.href = `${API_GATEWAY_URL}/auth/google/login`;
+}
+
+function openRoomService() {
+  if (!token) {
+    output.textContent = "❌ Please sign in with Google before opening Room Service.";
+    return;
+  }
+
+  window.location.href = "./room/index.html";
 }
 
 async function callChatService() {

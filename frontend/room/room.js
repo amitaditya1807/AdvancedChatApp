@@ -26,6 +26,8 @@ const participantsByRoom = new Map();
 if (token) {
   localStorage.setItem(TOKEN_KEY, token);
   removeTokenFromUrl();
+} else {
+  window.location.replace("../index.html?authRequired=room");
 }
 
 renderSession();
@@ -76,6 +78,8 @@ function renderSession() {
 }
 
 function login() { window.location.href = `${API_GATEWAY_URL}/auth/google/login`; }
+
+function goHome() { window.location.href = "../index.html"; }
 
 async function callChatService() {
   if (!ensureSignedIn()) return;
@@ -220,7 +224,7 @@ async function apiRequest(path, options = {}) {
 
 function startRoomPolling() {
   stopRoomPolling();
-  roomPollTimerId = window.setInterval(() => { if (token) loadRooms(); }, 5000);
+  roomPollTimerId = window.setInterval(() => { if (token) loadRooms(); }, 2000);
 }
 
 function stopRoomPolling() {
@@ -295,6 +299,6 @@ async function loadParticipantsForVisibleRooms() {
 function formatParticipants(roomId) {
   const people = participantsByRoom.get(roomId);
   if (people === null) return "Add password to view";
-  if (!people || people.length === 0) return "No people yet";
+  if (!people || people.length === 0) return "No messages yet";
   return people.join(", ");
 }

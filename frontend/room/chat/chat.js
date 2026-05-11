@@ -14,20 +14,26 @@ const roomMeta = document.getElementById("roomMeta");
 const peopleCountBadge = document.getElementById("peopleCountBadge");
 
 let me = "";
-let timer = null;
+let roomStateTimer = null;
+let heartbeatTimer = null;
 let joinedPeople = [];
 
 roomTitle.textContent = decodeURIComponent(roomName);
-if (!token || !roomId || !password) {
-  roomMeta.textContent = "Missing token, room, or password.";
+if (!token) {
+  window.location.replace("../../index.html?authRequired=room");
+} else if (!roomId || !password) {
+  roomMeta.textContent = "Missing room or password.";
 } else {
   me = getCurrentUserId();
   roomMeta.textContent = "Connected";
-  loadRoomState(false);
-  timer = setInterval(() => loadRoomState(false), 3000);
+  startLiveRoomUpdates();
 }
 
-window.addEventListener("beforeunload", () => timer && clearInterval(timer));
+window.addEventListener("beforeunload", stopLiveRoomUpdates);
+
+function goHome() {
+  location.href = "../../index.html";
+}
 
 function goBack() {
   location.href = "../index.html";
@@ -60,6 +66,29 @@ async function api(path, options = {}) {
   return body;
 }
 
+function startLiveRoomUpdates() {
+  touchParticipant();
+  loadRoomState(false);
+
+  heartbeatTimer = setInterval(touchParticipant, 4000);
+  roomStateTimer = setInterval(() => loadRoomState(false), 1000);
+}
+
+function stopLiveRoomUpdates() {
+  if (heartbeatTimer) clearInterval(heartbeatTimer);
+  if (roomStateTimer) clearInterval(roomStateTimer);
+  heartbeatTimer = null;
+  roomStateTimer = null;
+}
+
+async function touchParticipant() {
+  try {
+    await api(`/chat/rooms/${roomId}/participants/heartbeat`, { method: "POST" });
+  } catch (error) {
+    roomMeta.textContent = error.message || "Failed to update presence";
+  }
+}
+
 async function loadRoomState(showStatus) {
   try {
     const [messages, participants] = await Promise.all([
@@ -77,6 +106,7 @@ async function loadRoomState(showStatus) {
 }
 
 async function loadMessages(showStatus) {
+  await touchParticipant();
   await loadRoomState(showStatus);
 }
 
