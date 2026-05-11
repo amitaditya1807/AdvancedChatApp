@@ -21,6 +21,7 @@ gatewayUrl.textContent = API_GATEWAY_URL;
 let token = readTokenFromUrl() || localStorage.getItem(TOKEN_KEY) || "";
 let rooms = [];
 let roomPollTimerId = null;
+const participantsByRoom = new Map();
 
 if (token) {
   localStorage.setItem(TOKEN_KEY, token);
@@ -94,6 +95,7 @@ async function loadRooms() {
   if (!ensureSignedIn()) return;
   try {
     rooms = await apiRequest("/chat/rooms");
+    await loadParticipantsForVisibleRooms();
     renderRooms();
   } catch (error) {
     output.textContent = `❌ ERROR:\n${error.message}`;
@@ -125,6 +127,7 @@ async function enterRoom() {
     }
 
     sessionStorage.setItem(`room_password_${room.id}`, password);
+    participantsByRoom.set(room.id, []);
     window.location.href = `./chat.html?roomId=${encodeURIComponent(room.id)}&roomName=${encodeURIComponent(room.name || "Room")}`;
   } catch (error) {
     output.textContent = `❌ ERROR:\n${error.message}`;
@@ -148,6 +151,7 @@ function renderRooms() {
       <button class="room-item" onclick="openExistingRoom('${room.id}','${escapeHtml(room.name)}')">
         <span class="room-name">${escapeHtml(room.name)}</span>
         <span class="room-meta">Room ID: ${escapeHtml(room.id)}</span>
+        <span class="room-meta">People: ${formatParticipants(room.id)}</span>
       </button>
       <button class="danger room-delete" onclick="deleteRoom('${room.id}')">Delete</button>
     </div>`).join("");
@@ -157,6 +161,7 @@ function openExistingRoom(roomId, roomName) {
   const pass = window.prompt("Enter room password to open chat");
   if (pass === null) return;
   sessionStorage.setItem(`room_password_${roomId}`, pass);
+  participantsByRoom.set(roomId, []);
   window.location.href = `./chat.html?roomId=${encodeURIComponent(roomId)}&roomName=${encodeURIComponent(roomName || "Room")}`;
 }
 
@@ -235,3 +240,31 @@ function logout() {
 }
 
 function clearOutput() { output.textContent = "Ready."; }
+
+async function loadParticipantsForVisibleRooms() {
+  const currentUserId = getCurrentUserId();
+  const myRooms = rooms.filter(r => r.createdByUserId === currentUserId);
+  await Promise.all(myRooms.map(async (room) => {
+    const password = sessionStorage.getItem(`room_password_${room.id}`);
+    if (!password) {
+      participantsByRoom.set(room.id, null);
+      return;
+    }
+    try {
+      const messages = await apiRequest(`/chat/rooms/${room.id}/messages`, {
+        headers: { "X-Room-Password": password }
+      });
+      const unique = [...new Set((messages || []).map(m => m.senderName).filter(Boolean))];
+      participantsByRoom.set(room.id, unique);
+    } catch {
+      participantsByRoom.set(room.id, null);
+    }
+  }));
+}
+
+function formatParticipants(roomId) {
+  const people = participantsByRoom.get(roomId);
+  if (people === null) return "Add password to view";
+  if (!people || people.length === 0) return "No messages yet";
+  return people.join(", ");
+}
