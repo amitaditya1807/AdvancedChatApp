@@ -9,6 +9,7 @@ const messagesEl = document.getElementById("messages");
 const input = document.getElementById("messageInput");
 const roomTitle = document.getElementById("roomTitle");
 const roomMeta = document.getElementById("roomMeta");
+const peopleCountBadge = document.getElementById("peopleCountBadge");
 let me = "";
 let timer = null;
 let joinedPeople = [];
@@ -56,6 +57,7 @@ async function loadMessages(showStatus) {
 
 function render(list) {
   joinedPeople = [...new Set(list.map(m => m.senderName).filter(Boolean))];
+  peopleCountBadge.textContent = `${joinedPeople.length}`;
 
   messagesEl.innerHTML = list.map(m => {
     const isYou = me && (m.senderUserId === me);
