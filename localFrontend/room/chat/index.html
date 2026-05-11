@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Room Chat</title>
+  <link rel="stylesheet" href="./chat.css" />
+</head>
+<body>
+  <main class="chat-page">
+    <header class="chat-header">
+      <button class="back-btn" onclick="goHome()">← Home</button>
+      <button class="back-btn" onclick="goBack()">Rooms</button>
+      <div class="header-info">
+        <h1 id="roomTitle">Room</h1>
+        <p id="roomMeta">Connecting...</p>
+      </div>
+      <button class="refresh-btn" onclick="loadMessages(true)">Refresh</button>
+      <button class="refresh-btn" onclick="showPeopleList()">People List</button>
+      <span id="peopleCountBadge" class="people-count">0</span>
+    </header>
+
+    <section id="messages" class="messages"></section>
+
+    <footer class="composer">
+      <input id="messageInput" type="text" maxlength="2000" placeholder="Type a message" onkeydown="handleKey(event)" />
+      <button onclick="sendMessage()">Send</button>
+    </footer>
+  </main>
+
+  <script src="./chat.js"></script>
+</body>
+</html>
