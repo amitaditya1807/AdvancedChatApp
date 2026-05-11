@@ -45,6 +45,11 @@ public sealed class ChatRoomService : IChatRoomService
         return _chatRoomRepository.CreateRoomAsync(room, cancellationToken);
     }
 
+    public async Task<ChatRoom> JoinRoomAsync(Guid roomId, string? password, CancellationToken cancellationToken = default)
+    {
+        return await EnsureRoomAccessAsync(roomId, password, cancellationToken);
+    }
+
     public async Task DeleteRoomAsync(Guid roomId, string userId, CancellationToken cancellationToken = default)
     {
         var room = await _chatRoomRepository.GetRoomAsync(roomId, cancellationToken);
@@ -89,7 +94,7 @@ public sealed class ChatRoomService : IChatRoomService
         return await _chatRoomRepository.AddMessageAsync(message, cancellationToken);
     }
 
-    private async Task EnsureRoomAccessAsync(Guid roomId, string? password, CancellationToken cancellationToken)
+    private async Task<ChatRoom> EnsureRoomAccessAsync(Guid roomId, string? password, CancellationToken cancellationToken)
     {
         var room = await _chatRoomRepository.GetRoomAsync(roomId, cancellationToken);
 
@@ -100,7 +105,7 @@ public sealed class ChatRoomService : IChatRoomService
 
         if (!room.IsPasswordProtected)
         {
-            return;
+            return room;
         }
 
         if (string.IsNullOrWhiteSpace(password)
@@ -112,6 +117,8 @@ public sealed class ChatRoomService : IChatRoomService
         {
             throw new UnauthorizedAccessException("Room password is required or incorrect.");
         }
+
+        return room;
     }
 
     private static string CreateSalt()

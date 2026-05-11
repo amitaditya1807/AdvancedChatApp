@@ -27,6 +27,7 @@ public sealed class InMemoryChatRoomRepository : IChatRoomRepository
     public Task<IReadOnlyCollection<ChatRoom>> GetRoomsAsync(string userId, CancellationToken cancellationToken = default)
     {
         var rooms = _rooms.Values
+            .Where(room => string.Equals(room.CreatedByUserId, userId, StringComparison.Ordinal))
             .OrderBy(room => room.CreatedAtUtc)
             .ToArray();
 

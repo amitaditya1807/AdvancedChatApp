@@ -9,6 +9,8 @@ public interface IChatRoomService
 
     Task<ChatRoom> CreateRoomAsync(string userId, CreateRoomRequest request, CancellationToken cancellationToken = default);
 
+    Task<ChatRoom> JoinRoomAsync(Guid roomId, string? password, CancellationToken cancellationToken = default);
+
     Task DeleteRoomAsync(Guid roomId, string userId, CancellationToken cancellationToken = default);
 
     Task<IReadOnlyCollection<ChatMessage>> GetMessagesAsync(Guid roomId, string userId, string? password, CancellationToken cancellationToken = default);

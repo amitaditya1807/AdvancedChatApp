@@ -107,16 +107,23 @@ async function enterRoom() {
 
   const input = roomIdInput.value.trim();
   const password = roomPasswordInput.value.trim();
-  if (!input) { output.textContent = "❌ Enter room ID or room name."; return; }
+  if (!input) { output.textContent = "❌ Enter room ID to join, or a room name to create."; return; }
   if (!password) { output.textContent = "❌ Enter room password."; return; }
 
   enterRoomButton.disabled = true;
 
   try {
-    await loadRooms();
-    let room = rooms.find(r => r.id === input || r.name.toLowerCase() === input.toLowerCase());
+    const ownedRoom = getCreatedRoomsForCurrentUser()
+      .find(r => r.id === input || r.name.toLowerCase() === input.toLowerCase());
+    const isRoomId = isGuid(input);
+    let room = ownedRoom;
 
-    if (!room) {
+    if (room) {
+      output.textContent = `✅ Opening your room: ${room.name}`;
+    } else if (isRoomId) {
+      room = await joinRoomById(input, password);
+      output.textContent = `✅ Joined room: ${room.name}`;
+    } else {
       room = await apiRequest("/chat/rooms", {
         method: "POST",
         body: JSON.stringify({ name: input, password })
@@ -138,8 +145,7 @@ async function enterRoom() {
 
 function renderRooms() {
   if (!token) { roomList.innerHTML = '<div class="chat-empty">Sign in to load your rooms.</div>'; return; }
-  const currentUserId = getCurrentUserId();
-  const myRooms = rooms.filter(r => r.createdByUserId === currentUserId);
+  const myRooms = getCreatedRoomsForCurrentUser();
 
   if (!myRooms.length) {
     roomList.innerHTML = '<div class="chat-empty">You have not created any rooms yet.</div>';
@@ -163,6 +169,13 @@ function openExistingRoom(roomId, roomName) {
   sessionStorage.setItem(`room_password_${roomId}`, pass);
   participantsByRoom.set(roomId, []);
   window.location.href = `./chat/index.html?roomId=${encodeURIComponent(roomId)}&roomName=${encodeURIComponent(roomName || "Room")}`;
+}
+
+async function joinRoomById(roomId, password) {
+  return await apiRequest(`/chat/rooms/${roomId}/join`, {
+    method: "POST",
+    headers: { "X-Room-Password": password }
+  });
 }
 
 async function deleteRoom(roomId) {
@@ -230,6 +243,15 @@ function escapeHtml(value) {
 
 function handleRoomInputKey(event) { if (event.key === "Enter") enterRoom(); }
 
+function isGuid(value) {
+  return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(value);
+}
+
+function getCreatedRoomsForCurrentUser() {
+  const currentUserId = getCurrentUserId();
+  return rooms.filter(room => room.createdByUserId === currentUserId);
+}
+
 function logout() {
   localStorage.removeItem(TOKEN_KEY);
   token = "";
@@ -242,9 +264,7 @@ function logout() {
 function clearOutput() { output.textContent = "Ready."; }
 
 async function loadParticipantsForVisibleRooms() {
-  const currentUserId = getCurrentUserId();
-  const myRooms = rooms.filter(r => r.createdByUserId === currentUserId);
-  await Promise.all(myRooms.map(async (room) => {
+  await Promise.all(getCreatedRoomsForCurrentUser().map(async (room) => {
     const password = sessionStorage.getItem(`room_password_${room.id}`);
     if (!password) {
       participantsByRoom.set(room.id, null);
