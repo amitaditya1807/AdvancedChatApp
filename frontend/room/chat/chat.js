@@ -5,7 +5,7 @@ const token = localStorage.getItem(TOKEN_KEY) || "";
 const params = new URLSearchParams(location.search);
 const roomId = params.get("roomId") || "";
 const roomName = params.get("roomName") || "Room";
-const password = sessionStorage.getItem(`room_password_${roomId}`) || "";
+const password = getRoomPassword(roomId);
 
 const messagesEl = document.getElementById("messages");
 const input = document.getElementById("messageInput");
@@ -30,6 +30,17 @@ if (!token) {
 }
 
 window.addEventListener("beforeunload", stopLiveRoomUpdates);
+window.addEventListener("pagehide", stopLiveRoomUpdates);
+window.addEventListener("pageshow", () => {
+  if (token && roomId && password) startLiveRoomUpdates();
+});
+document.addEventListener("visibilitychange", () => {
+  if (document.visibilityState === "visible" && token && roomId && password) {
+    startLiveRoomUpdates();
+  } else if (document.visibilityState === "hidden") {
+    stopLiveRoomUpdates();
+  }
+});
 
 function goHome() {
   location.href = "../../index.html";
@@ -41,6 +52,10 @@ function goBack() {
 
 function handleKey(e) {
   if (e.key === "Enter") sendMessage();
+}
+
+function getRoomPassword(roomId) {
+  return localStorage.getItem(`room_password_${roomId}`) || sessionStorage.getItem(`room_password_${roomId}`) || "";
 }
 
 async function api(path, options = {}) {
@@ -67,6 +82,7 @@ async function api(path, options = {}) {
 }
 
 function startLiveRoomUpdates() {
+  stopLiveRoomUpdates();
   touchParticipant();
   loadRoomState(false);
 

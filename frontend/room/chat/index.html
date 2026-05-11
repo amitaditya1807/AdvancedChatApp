@@ -9,15 +9,17 @@
 <body>
   <main class="chat-page">
     <header class="chat-header">
-      <button class="back-btn" onclick="goHome()">← Home</button>
-      <button class="back-btn" onclick="goBack()">Rooms</button>
       <div class="header-info">
         <h1 id="roomTitle">Room</h1>
         <p id="roomMeta">Connecting...</p>
       </div>
-      <button class="refresh-btn" onclick="loadMessages(true)">Refresh</button>
-      <button class="refresh-btn" onclick="showPeopleList()">People List</button>
-      <span id="peopleCountBadge" class="people-count">0</span>
+      <div class="chat-actions">
+        <button class="back-btn" onclick="goHome()">← Home</button>
+        <button class="back-btn" onclick="goBack()">Rooms</button>
+        <button class="refresh-btn" onclick="loadMessages(true)">Refresh</button>
+        <button class="refresh-btn" onclick="showPeopleList()">People List</button>
+        <span id="peopleCountBadge" class="people-count">0</span>
+      </div>
     </header>
 
     <section id="messages" class="messages"></section>

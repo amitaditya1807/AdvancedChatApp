@@ -3,17 +3,19 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>ChatService</title>
+  <title>Room Service</title>
   <link rel="stylesheet" href="../styles.css" />
 </head>
 <body>
   <main class="page">
     <header class="hero panel">
       <div class="hero__left">
-        <p class="eyebrow">🏠 ChatService</p>
+        <div class="hero-topline">
+          <p class="eyebrow">🏠 Room Service</p>
+          <button class="secondary compact" onclick="goHome()">← Home</button>
+        </div>
         <h1>Rooms</h1>
         <p class="subtitle">Enter an existing Room ID/name + password to join. If the room does not exist, a new room will be created.</p>
-        <div class="actions"><button class="secondary" onclick="goHome()">← Home</button></div>
         <div class="inline-form">
           <input id="roomIdInput" type="text" placeholder="Room ID or room name" onkeydown="handleRoomInputKey(event)" />
           <input id="roomPasswordInput" type="password" placeholder="Room Password" onkeydown="handleRoomInputKey(event)" />

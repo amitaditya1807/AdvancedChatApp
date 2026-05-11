@@ -26,6 +26,7 @@ html, body {
   z-index: 20;
   display: flex;
   align-items: center;
+  justify-content: space-between;
   gap: 12px;
   padding: 12px;
   backdrop-filter: blur(10px);
@@ -35,12 +36,20 @@ html, body {
 }
 
 .header-info {
+  min-width: 0;
   display: flex;
+  flex: 1 1 auto;
   flex-direction: column;
   gap: 2px;
-  padding-right: 8px;
-  border-right: 1px solid rgba(255,255,255,0.1);
-  margin-right: 4px;
+}
+
+.chat-actions {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  flex-wrap: wrap;
 }
 
 .chat-header h1 {
@@ -67,7 +76,6 @@ html, body {
 .back-btn:hover, .refresh-btn:hover { transform: translateY(-1px); background:#3a4f5b; }
 
 .people-count {
-  margin-left: auto;
   background: #1faa59;
   color: #fff;
   min-width: 34px;
@@ -129,4 +137,9 @@ html, body {
   border-radius: 8px;
   padding: 11px;
   font-size: 16px;
+}
+@media (max-width: 720px) {
+  .chat-header { align-items: flex-start; flex-direction: column; }
+  .chat-actions { width: 100%; justify-content: flex-start; }
+  .back-btn, .refresh-btn { padding: 8px 10px; font-size: 14px; }
 }

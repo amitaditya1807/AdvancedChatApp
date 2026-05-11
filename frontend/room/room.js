@@ -136,7 +136,7 @@ async function enterRoom() {
       }
     }
 
-    sessionStorage.setItem(`room_password_${room.id}`, password);
+    saveRoomPassword(room.id, password);
     participantsByRoom.set(room.id, []);
     window.location.href = `./chat/index.html?roomId=${encodeURIComponent(room.id)}&roomName=${encodeURIComponent(room.name || "Room")}`;
   } catch (error) {
@@ -172,7 +172,7 @@ async function openExistingRoom(roomId, roomName) {
 
   try {
     const room = await joinRoom(roomId, pass);
-    sessionStorage.setItem(`room_password_${room.id}`, pass);
+    saveRoomPassword(room.id, pass);
     participantsByRoom.set(room.id, []);
     window.location.href = `./chat/index.html?roomId=${encodeURIComponent(room.id)}&roomName=${encodeURIComponent(room.name || roomName || "Room")}`;
   } catch (error) {
@@ -267,8 +267,27 @@ function getCreatedRoomsForCurrentUser() {
   return rooms.filter(room => room.createdByUserId === currentUserId);
 }
 
+function getRoomPassword(roomId) {
+  return localStorage.getItem(`room_password_${roomId}`) || sessionStorage.getItem(`room_password_${roomId}`) || "";
+}
+
+function saveRoomPassword(roomId, password) {
+  localStorage.setItem(`room_password_${roomId}`, password);
+  sessionStorage.setItem(`room_password_${roomId}`, password);
+}
+
+function clearSavedRoomPasswords() {
+  Object.keys(localStorage)
+    .filter(key => key.startsWith("room_password_"))
+    .forEach(key => localStorage.removeItem(key));
+  Object.keys(sessionStorage)
+    .filter(key => key.startsWith("room_password_"))
+    .forEach(key => sessionStorage.removeItem(key));
+}
+
 function logout() {
   localStorage.removeItem(TOKEN_KEY);
+  clearSavedRoomPasswords();
   token = "";
   rooms = [];
   stopRoomPolling();
@@ -280,7 +299,7 @@ function clearOutput() { output.textContent = "Ready."; }
 
 async function loadParticipantsForVisibleRooms() {
   await Promise.all(getCreatedRoomsForCurrentUser().map(async (room) => {
-    const password = sessionStorage.getItem(`room_password_${room.id}`);
+    const password = getRoomPassword(room.id);
     if (!password) {
       participantsByRoom.set(room.id, null);
       return;
