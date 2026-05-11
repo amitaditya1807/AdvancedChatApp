@@ -14,8 +14,8 @@
         <h1>Rooms</h1>
         <p class="subtitle">Enter Room ID + password. If room doesn’t exist, it will be created.</p>
         <div class="inline-form">
-          <input id="roomIdInput" type="text" placeholder="Room ID or Name" />
-          <input id="roomPasswordInput" type="password" placeholder="Room Password" />
+          <input id="roomIdInput" type="text" placeholder="Room ID or Name" onkeydown="handleRoomInputKey(event)" />
+          <input id="roomPasswordInput" type="password" placeholder="Room Password" onkeydown="handleRoomInputKey(event)" />
           <button id="enterRoomButton" class="primary" onclick="enterRoom()">Create / Join</button>
         </div>
       </div>
@@ -29,6 +29,19 @@
         <section class="status-card">
           <div class="status-label">Gateway</div>
           <div id="gatewayUrl">Loading...</div>
+        </section>
+        <section class="status-card">
+          <div class="status-label">JWT Preview</div>
+          <div id="tokenPreview" class="token-preview">No token stored</div>
+        </section>
+        <section class="status-card">
+          <div class="status-row">
+            <div class="status-label">JWT Expiry</div>
+            <div id="expiryBadge" class="expiry-badge">No token</div>
+          </div>
+          <div id="expiryText" class="expiry-time">Not available</div>
+          <div id="expiryMeta" class="expiry-meta">Sign in to see token lifetime and countdown.</div>
+          <div class="expiry-meter" aria-hidden="true"><div id="expiryProgress" class="expiry-meter-fill"></div></div>
         </section>
       </div>
     </header>
