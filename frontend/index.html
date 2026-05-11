@@ -8,16 +8,35 @@
 </head>
 <body>
   <main class="page">
+    <header class="hero panel">
+      <div class="hero__left">
+        <p class="eyebrow">🚀 API Gateway + Microservices</p>
+        <h1>Advance Chat App</h1>
+        <p class="subtitle">
+          Secure chat with JWT auth, rooms, and real-time conversation.
+        </p>
+      </div>
+    </header>
+
     <section class="panel chat-card">
-      <div class="section-title"><h2>Features</h2></div>
+      <div class="section-title">
+        <h2>Features</h2>
+      </div>
+
       <div class="grid">
         <div class="mini-card">
           <strong>Room Service</strong>
-          <span>Create/join room, manage participants, and open live chat.</span>
-          <div style="margin-top:12px;"><a href="./rooms.html"><button class="primary">Open Room Service</button></a></div>
+          <span>Create or join room using Room ID + Password.</span>
+          <div style="margin-top: 12px;">
+            <a href="./room/index.html">
+              <button class="primary">Open Room Service</button>
+            </a>
+          </div>
         </div>
       </div>
     </section>
   </main>
+
+  <script src="./main.js"></script>
 </body>
 </html>

@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Room Service</title>
+  <link rel="stylesheet" href="../styles.css" />
+</head>
+<body>
+  <main class="page">
+    <header class="hero panel">
+      <div class="hero__left">
+        <p class="eyebrow">🏠 Room Service</p>
+        <h1>Rooms</h1>
+        <p class="subtitle">Enter Room ID + password. If room doesn’t exist, it will be created.</p>
+        <div class="inline-form">
+          <input id="roomIdInput" type="text" placeholder="Room ID or Name" />
+          <input id="roomPasswordInput" type="password" placeholder="Room Password" />
+          <button id="enterRoomButton" class="primary" onclick="enterRoom()">Create / Join</button>
+        </div>
+      </div>
+
+      <div class="hero__right status-grid">
+        <section class="status-card">
+          <div class="status-label">Session</div>
+          <div id="sessionText">Not signed in</div>
+          <div id="sessionBadge" class="badge"><span class="dot"></span>Disconnected</div>
+        </section>
+        <section class="status-card">
+          <div class="status-label">Gateway</div>
+          <div id="gatewayUrl">Loading...</div>
+        </section>
+      </div>
+    </header>
+
+    <section class="panel chat-card">
+      <div class="section-title"><h2>Your Created Rooms</h2></div>
+      <div id="roomList" class="room-list"><div class="chat-empty">Sign in to load rooms.</div></div>
+    </section>
+
+    <section class="panel output-card">
+      <div class="section-title">
+        <h2>Output</h2>
+        <button class="secondary" onclick="clearOutput()">Clear</button>
+      </div>
+      <pre id="output">Ready.</pre>
+    </section>
+  </main>
+
+  <script src="./room.js"></script>
+</body>
+</html>
