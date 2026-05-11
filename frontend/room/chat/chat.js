@@ -18,13 +18,13 @@ let timer = null;
 let joinedPeople = [];
 
 roomTitle.textContent = decodeURIComponent(roomName);
-if (!token || !roomId) {
-  roomMeta.textContent = "Missing token or room.";
+if (!token || !roomId || !password) {
+  roomMeta.textContent = "Missing token, room, or password.";
 } else {
   me = getCurrentUserId();
   roomMeta.textContent = "Connected";
-  loadMessages(false);
-  timer = setInterval(() => loadMessages(false), 3000);
+  loadRoomState(false);
+  timer = setInterval(() => loadRoomState(false), 3000);
 }
 
 window.addEventListener("beforeunload", () => timer && clearInterval(timer));
@@ -52,24 +52,40 @@ async function api(path, options = {}) {
   let body = null;
   try { body = text ? JSON.parse(text) : null; } catch { body = text; }
 
-  if (!res.ok) throw new Error(`Status ${res.status}`);
+  if (!res.ok) {
+    const message = typeof body === "string" ? body : (body?.error || `Status ${res.status}`);
+    throw new Error(message);
+  }
+
   return body;
 }
 
-async function loadMessages(showStatus) {
+async function loadRoomState(showStatus) {
   try {
-    const data = await api(`/chat/rooms/${roomId}/messages`);
-    render(data || []);
+    const [messages, participants] = await Promise.all([
+      api(`/chat/rooms/${roomId}/messages`),
+      api(`/chat/rooms/${roomId}/participants`)
+    ]);
+
+    setParticipants(participants || []);
+    render(messages || []);
+
     if (showStatus) roomMeta.textContent = `Updated ${new Date().toLocaleTimeString()}`;
-  } catch {
-    roomMeta.textContent = "Failed to load messages";
+  } catch (error) {
+    roomMeta.textContent = error.message || "Failed to load room";
   }
 }
 
-function render(list) {
-  joinedPeople = [...new Set(list.map(m => m.senderName).filter(Boolean))];
-  peopleCountBadge.textContent = `${joinedPeople.length}`;
+async function loadMessages(showStatus) {
+  await loadRoomState(showStatus);
+}
 
+function setParticipants(participants) {
+  joinedPeople = [...new Set((participants || []).filter(Boolean))];
+  peopleCountBadge.textContent = `${joinedPeople.length}`;
+}
+
+function render(list) {
   messagesEl.innerHTML = list.map(m => {
     const isYou = me && (m.senderUserId === me);
     return `<div class="bubble ${isYou ? "you" : "other"}">${escapeHtml(m.content)}<span class="meta">${escapeHtml(m.senderName)} • ${new Date(m.sentAtUtc).toLocaleTimeString()}</span></div>`;
@@ -83,12 +99,16 @@ async function sendMessage() {
   if (!content) return;
   input.value = "";
 
-  await api(`/chat/rooms/${roomId}/messages`, {
-    method: "POST",
-    body: JSON.stringify({ content })
-  });
+  try {
+    await api(`/chat/rooms/${roomId}/messages`, {
+      method: "POST",
+      body: JSON.stringify({ content })
+    });
 
-  await loadMessages(false);
+    await loadRoomState(false);
+  } catch (error) {
+    roomMeta.textContent = error.message || "Failed to send message";
+  }
 }
 
 function showPeopleList() {

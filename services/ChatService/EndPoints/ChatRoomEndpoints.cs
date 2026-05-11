@@ -44,13 +44,55 @@ public static class ChatRoomEndpoints
 
             try
             {
-                var room = await chatRoomService.CreateRoomAsync(userId, request, cancellationToken);
+                var room = await chatRoomService.CreateRoomAsync(
+                    userId,
+                    GetSenderName(context),
+                    request,
+                    cancellationToken);
 
                 return Results.Created($"/chat/rooms/{room.Id}", room);
             }
             catch (ArgumentException ex)
             {
                 return Results.BadRequest(new { error = ex.Message });
+            }
+        });
+
+        group.MapPost("/join", async (
+            JoinRoomRequest request,
+            HttpContext context,
+            IChatRoomService chatRoomService,
+            CancellationToken cancellationToken) =>
+        {
+            var userId = GetUserId(context);
+
+            if (string.IsNullOrWhiteSpace(userId))
+            {
+                return Results.Unauthorized();
+            }
+
+            try
+            {
+                var room = await chatRoomService.JoinRoomAsync(
+                    request.RoomKey,
+                    userId,
+                    GetSenderName(context),
+                    request.Password,
+                    cancellationToken);
+
+                return Results.Ok(room);
+            }
+            catch (ArgumentException ex)
+            {
+                return Results.BadRequest(new { error = ex.Message });
+            }
+            catch (KeyNotFoundException ex)
+            {
+                return Results.NotFound(new { error = ex.Message });
+            }
+            catch (UnauthorizedAccessException ex)
+            {
+                return Results.Json(new { error = ex.Message }, statusCode: StatusCodes.Status403Forbidden);
             }
         });
 
@@ -70,7 +112,9 @@ public static class ChatRoomEndpoints
             try
             {
                 var room = await chatRoomService.JoinRoomAsync(
-                    roomId,
+                    roomId.ToString(),
+                    userId,
+                    GetSenderName(context),
                     GetRoomPassword(context),
                     cancellationToken);
 
@@ -177,6 +221,38 @@ public static class ChatRoomEndpoints
             catch (ArgumentException ex)
             {
                 return Results.BadRequest(new { error = ex.Message });
+            }
+            catch (KeyNotFoundException ex)
+            {
+                return Results.NotFound(new { error = ex.Message });
+            }
+            catch (UnauthorizedAccessException ex)
+            {
+                return Results.Json(new { error = ex.Message }, statusCode: StatusCodes.Status403Forbidden);
+            }
+        });
+
+        group.MapGet("/{roomId:guid}/participants", async (
+            Guid roomId,
+            HttpContext context,
+            IChatRoomService chatRoomService,
+            CancellationToken cancellationToken) =>
+        {
+            var userId = GetUserId(context);
+
+            if (string.IsNullOrWhiteSpace(userId))
+            {
+                return Results.Unauthorized();
+            }
+
+            try
+            {
+                var participants = await chatRoomService.GetParticipantsAsync(
+                    roomId,
+                    GetRoomPassword(context),
+                    cancellationToken);
+
+                return Results.Ok(participants);
             }
             catch (KeyNotFoundException ex)
             {

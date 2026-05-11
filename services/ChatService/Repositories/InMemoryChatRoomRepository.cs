@@ -8,6 +8,7 @@ public sealed class InMemoryChatRoomRepository : IChatRoomRepository
 {
     private readonly ConcurrentDictionary<Guid, ChatRoom> _rooms = new();
     private readonly ConcurrentDictionary<Guid, ConcurrentQueue<ChatMessage>> _messages = new();
+    private readonly ConcurrentDictionary<Guid, ConcurrentDictionary<string, string>> _participants = new();
 
     public InMemoryChatRoomRepository()
     {
@@ -22,6 +23,7 @@ public sealed class InMemoryChatRoomRepository : IChatRoomRepository
 
         _rooms[generalRoom.Id] = generalRoom;
         _messages[generalRoom.Id] = new ConcurrentQueue<ChatMessage>();
+        _participants[generalRoom.Id] = new ConcurrentDictionary<string, string>();
     }
 
     public Task<IReadOnlyCollection<ChatRoom>> GetRoomsAsync(string userId, CancellationToken cancellationToken = default)
@@ -41,10 +43,19 @@ public sealed class InMemoryChatRoomRepository : IChatRoomRepository
         return Task.FromResult(room);
     }
 
+    public Task<ChatRoom?> GetRoomByNameAsync(string roomName, CancellationToken cancellationToken = default)
+    {
+        var room = _rooms.Values.FirstOrDefault(room =>
+            string.Equals(room.Name, roomName, StringComparison.OrdinalIgnoreCase));
+
+        return Task.FromResult(room);
+    }
+
     public Task<ChatRoom> CreateRoomAsync(ChatRoom room, CancellationToken cancellationToken = default)
     {
         _rooms[room.Id] = room;
         _messages.TryAdd(room.Id, new ConcurrentQueue<ChatMessage>());
+        _participants.TryAdd(room.Id, new ConcurrentDictionary<string, string>());
 
         return Task.FromResult(room);
     }
@@ -56,6 +67,7 @@ public sealed class InMemoryChatRoomRepository : IChatRoomRepository
         if (roomDeleted)
         {
             _messages.TryRemove(roomId, out _);
+            _participants.TryRemove(roomId, out _);
         }
 
         return Task.FromResult(roomDeleted);
@@ -88,5 +100,37 @@ public sealed class InMemoryChatRoomRepository : IChatRoomRepository
             .Enqueue(message);
 
         return Task.FromResult(message);
+    }
+
+    public Task AddParticipantAsync(Guid roomId, string userId, string displayName, CancellationToken cancellationToken = default)
+    {
+        if (!_rooms.ContainsKey(roomId))
+        {
+            throw new KeyNotFoundException($"Room '{roomId}' was not found.");
+        }
+
+        _participants
+            .GetOrAdd(roomId, _ => new ConcurrentDictionary<string, string>())
+            .AddOrUpdate(userId, displayName, (_, _) => displayName);
+
+        return Task.CompletedTask;
+    }
+
+    public Task<IReadOnlyCollection<string>> GetParticipantsAsync(Guid roomId, CancellationToken cancellationToken = default)
+    {
+        if (!_rooms.ContainsKey(roomId))
+        {
+            return Task.FromResult<IReadOnlyCollection<string>>(Array.Empty<string>());
+        }
+
+        var participants = _participants
+            .GetOrAdd(roomId, _ => new ConcurrentDictionary<string, string>())
+            .Values
+            .Where(name => !string.IsNullOrWhiteSpace(name))
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .OrderBy(name => name)
+            .ToArray();
+
+        return Task.FromResult<IReadOnlyCollection<string>>(participants);
     }
 }

@@ -12,9 +12,9 @@
       <div class="hero__left">
         <p class="eyebrow">🏠 Room Service</p>
         <h1>Rooms</h1>
-        <p class="subtitle">Enter a Room ID + password to join any room, or enter a new room name + password to create one.</p>
+        <p class="subtitle">Enter an existing Room ID/name + password to join. If the room does not exist, a new room will be created.</p>
         <div class="inline-form">
-          <input id="roomIdInput" type="text" placeholder="Room ID to join, or name to create" onkeydown="handleRoomInputKey(event)" />
+          <input id="roomIdInput" type="text" placeholder="Room ID or room name" onkeydown="handleRoomInputKey(event)" />
           <input id="roomPasswordInput" type="password" placeholder="Room Password" onkeydown="handleRoomInputKey(event)" />
           <button id="enterRoomButton" class="primary" onclick="enterRoom()">Join / Create</button>
         </div>

@@ -20,7 +20,7 @@ public sealed class ChatRoomService : IChatRoomService
         return _chatRoomRepository.GetRoomsAsync(userId, cancellationToken);
     }
 
-    public Task<ChatRoom> CreateRoomAsync(string userId, CreateRoomRequest request, CancellationToken cancellationToken = default)
+    public async Task<ChatRoom> CreateRoomAsync(string userId, string senderName, CreateRoomRequest request, CancellationToken cancellationToken = default)
     {
         if (string.IsNullOrWhiteSpace(request.Name))
         {
@@ -32,22 +32,48 @@ public sealed class ChatRoomService : IChatRoomService
             throw new ArgumentException("Room password is required.", nameof(request));
         }
 
+        var roomName = request.Name.Trim();
+        var existingRoom = await _chatRoomRepository.GetRoomByNameAsync(roomName, cancellationToken);
+
+        if (existingRoom is not null)
+        {
+            throw new ArgumentException("Room name already exists. Enter the correct password to join this room.", nameof(request));
+        }
+
         var salt = CreateSalt();
         var room = new ChatRoom(
             Guid.NewGuid(),
-            request.Name.Trim(),
+            roomName,
             userId,
             DateTime.UtcNow,
             true,
             HashPassword(request.Password, salt),
             salt);
 
-        return _chatRoomRepository.CreateRoomAsync(room, cancellationToken);
+        var createdRoom = await _chatRoomRepository.CreateRoomAsync(room, cancellationToken);
+        await _chatRoomRepository.AddParticipantAsync(createdRoom.Id, userId, NormalizeSenderName(senderName), cancellationToken);
+
+        return createdRoom;
     }
 
-    public async Task<ChatRoom> JoinRoomAsync(Guid roomId, string? password, CancellationToken cancellationToken = default)
+    public async Task<ChatRoom> JoinRoomAsync(string roomKey, string userId, string senderName, string? password, CancellationToken cancellationToken = default)
     {
-        return await EnsureRoomAccessAsync(roomId, password, cancellationToken);
+        if (string.IsNullOrWhiteSpace(roomKey))
+        {
+            throw new ArgumentException("Room ID or name is required.", nameof(roomKey));
+        }
+
+        var room = await GetRoomByKeyAsync(roomKey.Trim(), cancellationToken);
+
+        if (room is null)
+        {
+            throw new KeyNotFoundException($"Room '{roomKey}' was not found.");
+        }
+
+        EnsureRoomAccess(room, password);
+        await _chatRoomRepository.AddParticipantAsync(room.Id, userId, NormalizeSenderName(senderName), cancellationToken);
+
+        return room;
     }
 
     public async Task DeleteRoomAsync(Guid roomId, string userId, CancellationToken cancellationToken = default)
@@ -83,15 +109,35 @@ public sealed class ChatRoomService : IChatRoomService
 
         await EnsureRoomAccessAsync(roomId, password, cancellationToken);
 
+        var normalizedSenderName = NormalizeSenderName(senderName);
+        await _chatRoomRepository.AddParticipantAsync(roomId, userId, normalizedSenderName, cancellationToken);
+
         var message = new ChatMessage(
             Guid.NewGuid(),
             roomId,
             userId,
-            string.IsNullOrWhiteSpace(senderName) ? "Chat user" : senderName.Trim(),
+            normalizedSenderName,
             request.Content.Trim(),
             DateTime.UtcNow);
 
         return await _chatRoomRepository.AddMessageAsync(message, cancellationToken);
+    }
+
+    public async Task<IReadOnlyCollection<string>> GetParticipantsAsync(Guid roomId, string? password, CancellationToken cancellationToken = default)
+    {
+        await EnsureRoomAccessAsync(roomId, password, cancellationToken);
+
+        return await _chatRoomRepository.GetParticipantsAsync(roomId, cancellationToken);
+    }
+
+    private async Task<ChatRoom?> GetRoomByKeyAsync(string roomKey, CancellationToken cancellationToken)
+    {
+        if (Guid.TryParse(roomKey, out var roomId))
+        {
+            return await _chatRoomRepository.GetRoomAsync(roomId, cancellationToken);
+        }
+
+        return await _chatRoomRepository.GetRoomByNameAsync(roomKey, cancellationToken);
     }
 
     private async Task<ChatRoom> EnsureRoomAccessAsync(Guid roomId, string? password, CancellationToken cancellationToken)
@@ -103,9 +149,16 @@ public sealed class ChatRoomService : IChatRoomService
             throw new KeyNotFoundException($"Room '{roomId}' was not found.");
         }
 
+        EnsureRoomAccess(room, password);
+
+        return room;
+    }
+
+    private static void EnsureRoomAccess(ChatRoom room, string? password)
+    {
         if (!room.IsPasswordProtected)
         {
-            return room;
+            return;
         }
 
         if (string.IsNullOrWhiteSpace(password)
@@ -117,8 +170,11 @@ public sealed class ChatRoomService : IChatRoomService
         {
             throw new UnauthorizedAccessException("Room password is required or incorrect.");
         }
+    }
 
-        return room;
+    private static string NormalizeSenderName(string senderName)
+    {
+        return string.IsNullOrWhiteSpace(senderName) ? "Chat user" : senderName.Trim();
     }
 
     private static string CreateSalt()
