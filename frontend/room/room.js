@@ -138,8 +138,6 @@ async function enterRoom() {
 
 function renderRooms() {
   if (!token) { roomList.innerHTML = '<div class="chat-empty">Sign in to load your rooms.</div>'; return; }
-
-  // ✅ SHOW ONLY CREATOR ROOMS
   const currentUserId = getCurrentUserId();
   const myRooms = rooms.filter(r => r.createdByUserId === currentUserId);
 
@@ -167,7 +165,6 @@ function openExistingRoom(roomId, roomName) {
   window.location.href = `./chat/index.html?roomId=${encodeURIComponent(roomId)}&roomName=${encodeURIComponent(roomName || "Room")}`;
 }
 
-// ✅ CREATOR CAN DELETE (button appears only in creator's own room list)
 async function deleteRoom(roomId) {
   if (!ensureSignedIn()) return;
   try {
@@ -215,7 +212,7 @@ function ensureSignedIn() {
 
 function getCurrentUserId() {
   const payload = decodeJwtPayload(token);
-  return payload?.["http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier"] || payload?.sub || "";
+  return payload?.["http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier"] || payload?.nameid || payload?.sub || payload?.uid || "";
 }
 
 function decodeJwtPayload(jwt) {
