@@ -15,15 +15,13 @@
         <p id="roomMeta">Connecting...</p>
       </div>
       <button class="refresh-btn" onclick="loadMessages(true)">Refresh</button>
-      <button class="refresh-btn" onclick="showPeopleCount()" title="See joined people">People: <span id="peopleCount">0</span></button>
+      <button class="refresh-btn" onclick="showPeopleList()" title="See joined people">People List</button>
     </header>
 
     <section id="messages" class="messages"></section>
 
     <footer class="composer">
-      <button class="attach-btn" onclick="insertImageLink()">Image URL</button>
-      <button class="attach-btn" onclick="insertVideoLink()">Video URL</button>
-      <input id="messageInput" type="text" maxlength="2000" placeholder="Type message or paste image/video URL" onkeydown="handleKey(event)" />
+      <input id="messageInput" type="text" maxlength="2000" placeholder="Type a message" onkeydown="handleKey(event)" />
       <button onclick="sendMessage()">Send</button>
     </footer>
   </main>

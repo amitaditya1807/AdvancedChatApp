@@ -9,9 +9,9 @@ const messagesEl = document.getElementById("messages");
 const input = document.getElementById("messageInput");
 const roomTitle = document.getElementById("roomTitle");
 const roomMeta = document.getElementById("roomMeta");
-const peopleCountEl = document.getElementById("peopleCount");
 let me = "";
 let timer = null;
+let joinedPeople = [];
 
 roomTitle.textContent = decodeURIComponent(roomName);
 if (!token || !roomId) {
@@ -55,12 +55,11 @@ async function loadMessages(showStatus) {
 }
 
 function render(list) {
-  const uniquePeople = [...new Set(list.map(m => m.senderName).filter(Boolean))];
-  peopleCountEl.textContent = String(uniquePeople.length);
+  joinedPeople = [...new Set(list.map(m => m.senderName).filter(Boolean))];
 
   messagesEl.innerHTML = list.map(m => {
     const isYou = me && (m.senderUserId === me);
-    return `<div class="bubble ${isYou ? "you" : "other"}">${renderContent(m.content)}<span class="meta">${escapeHtml(m.senderName)} • ${new Date(m.sentAtUtc).toLocaleTimeString()}</span></div>`;
+    return `<div class="bubble ${isYou ? "you" : "other"}">${escapeHtml(m.content)}<span class="meta">${escapeHtml(m.senderName)} • ${new Date(m.sentAtUtc).toLocaleTimeString()}</span></div>`;
   }).join("") || '<div class="meta">No messages yet.</div>';
   messagesEl.scrollTop = messagesEl.scrollHeight;
 }
@@ -87,36 +86,10 @@ function getCurrentUserId() {
 }
 function escapeHtml(v){return String(v).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/\"/g,"&quot;").replace(/'/g,"&#039;");}
 
-function insertImageLink(){
-  const url = window.prompt("Paste image URL (jpg/png/gif/webp):");
-  if(!url) return;
-  input.value = `${input.value}${input.value ? " " : ""}${url.trim()}`;
-  input.focus();
-}
-
-function insertVideoLink(){
-  const url = window.prompt("Paste video URL (mp4/webm/mov):");
-  if(!url) return;
-  input.value = `${input.value}${input.value ? " " : ""}${url.trim()}`;
-  input.focus();
-}
-
-function renderContent(content){
-  const text = String(content || "").trim();
-  const imageMatch = text.match(/^(https?:\/\/\S+\.(?:png|jpe?g|gif|webp))(?:\?\S*)?$/i);
-  const videoMatch = text.match(/^(https?:\/\/\S+\.(?:mp4|webm|mov))(?:\?\S*)?$/i);
-  if(imageMatch){
-    const src = imageMatch[1];
-    return `<a href="${escapeHtml(src)}" target="_blank" rel="noopener"><img class="media media-image" src="${escapeHtml(src)}" alt="shared image" /></a>`;
+function showPeopleList(){
+  if (!joinedPeople.length) {
+    window.alert("No people joined yet.");
+    return;
   }
-  if(videoMatch){
-    const src = videoMatch[1];
-    return `<video class="media media-video" controls src="${escapeHtml(src)}"></video>`;
-  }
-  return `<span>${escapeHtml(text)}</span>`;
-}
-
-function showPeopleCount(){
-  const count = Number(peopleCountEl.textContent || "0");
-  window.alert(`People joined: ${count}`);
+  window.alert(`People joined (${joinedPeople.length}):\n- ${joinedPeople.join("\n- ")}`);
 }
