@@ -18,7 +18,7 @@ public interface IChatRoomRepository
 
     Task<ChatMessage> AddMessageAsync(ChatMessage message, CancellationToken cancellationToken = default);
 
-    Task AddParticipantAsync(Guid roomId, string userId, string displayName, CancellationToken cancellationToken = default);
+    Task AddParticipantAsync(Guid roomId, string userId, string displayName, DateTime lastSeenUtc, CancellationToken cancellationToken = default);
 
-    Task<IReadOnlyCollection<string>> GetParticipantsAsync(Guid roomId, CancellationToken cancellationToken = default);
+    Task<IReadOnlyCollection<ChatParticipant>> GetParticipantsAsync(Guid roomId, DateTime activeAfterUtc, CancellationToken cancellationToken = default);
 }

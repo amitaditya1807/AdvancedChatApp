@@ -8,6 +8,8 @@ namespace ChatService.Services;
 
 public sealed class ChatRoomService : IChatRoomService
 {
+    private static readonly TimeSpan ActiveParticipantWindow = TimeSpan.FromSeconds(12);
+
     private readonly IChatRoomRepository _chatRoomRepository;
 
     public ChatRoomService(IChatRoomRepository chatRoomRepository)
@@ -51,7 +53,7 @@ public sealed class ChatRoomService : IChatRoomService
             salt);
 
         var createdRoom = await _chatRoomRepository.CreateRoomAsync(room, cancellationToken);
-        await _chatRoomRepository.AddParticipantAsync(createdRoom.Id, userId, NormalizeSenderName(senderName), cancellationToken);
+        await _chatRoomRepository.AddParticipantAsync(createdRoom.Id, userId, NormalizeSenderName(senderName), DateTime.UtcNow, cancellationToken);
 
         return createdRoom;
     }
@@ -71,7 +73,7 @@ public sealed class ChatRoomService : IChatRoomService
         }
 
         EnsureRoomAccess(room, password);
-        await _chatRoomRepository.AddParticipantAsync(room.Id, userId, NormalizeSenderName(senderName), cancellationToken);
+        await _chatRoomRepository.AddParticipantAsync(room.Id, userId, NormalizeSenderName(senderName), DateTime.UtcNow, cancellationToken);
 
         return room;
     }
@@ -110,7 +112,7 @@ public sealed class ChatRoomService : IChatRoomService
         await EnsureRoomAccessAsync(roomId, password, cancellationToken);
 
         var normalizedSenderName = NormalizeSenderName(senderName);
-        await _chatRoomRepository.AddParticipantAsync(roomId, userId, normalizedSenderName, cancellationToken);
+        await _chatRoomRepository.AddParticipantAsync(roomId, userId, normalizedSenderName, DateTime.UtcNow, cancellationToken);
 
         var message = new ChatMessage(
             Guid.NewGuid(),
@@ -123,11 +125,17 @@ public sealed class ChatRoomService : IChatRoomService
         return await _chatRoomRepository.AddMessageAsync(message, cancellationToken);
     }
 
-    public async Task<IReadOnlyCollection<string>> GetParticipantsAsync(Guid roomId, string? password, CancellationToken cancellationToken = default)
+    public async Task<IReadOnlyCollection<ChatParticipant>> GetParticipantsAsync(Guid roomId, string? password, CancellationToken cancellationToken = default)
     {
         await EnsureRoomAccessAsync(roomId, password, cancellationToken);
 
-        return await _chatRoomRepository.GetParticipantsAsync(roomId, cancellationToken);
+        return await _chatRoomRepository.GetParticipantsAsync(roomId, DateTime.UtcNow.Subtract(ActiveParticipantWindow), cancellationToken);
+    }
+
+    public async Task TouchParticipantAsync(Guid roomId, string userId, string senderName, string? password, CancellationToken cancellationToken = default)
+    {
+        await EnsureRoomAccessAsync(roomId, password, cancellationToken);
+        await _chatRoomRepository.AddParticipantAsync(roomId, userId, NormalizeSenderName(senderName), DateTime.UtcNow, cancellationToken);
     }
 
     private async Task<ChatRoom?> GetRoomByKeyAsync(string roomKey, CancellationToken cancellationToken)

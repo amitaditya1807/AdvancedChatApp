@@ -111,8 +111,28 @@ async function loadMessages(showStatus) {
 }
 
 function setParticipants(participants) {
-  joinedPeople = [...new Set((participants || []).filter(Boolean))];
+  const uniqueParticipants = new Map();
+
+  (participants || []).forEach((participant) => {
+    const normalized = normalizeParticipant(participant);
+    if (!normalized) return;
+    uniqueParticipants.set(normalized.key, normalized.name);
+  });
+
+  joinedPeople = [...uniqueParticipants.values()];
   peopleCountBadge.textContent = `${joinedPeople.length}`;
+}
+
+function normalizeParticipant(participant) {
+  if (!participant) return null;
+
+  if (typeof participant === "string") {
+    return { key: participant, name: participant };
+  }
+
+  const userId = participant.userId || participant.UserId || "";
+  const displayName = participant.displayName || participant.DisplayName || userId || "Chat user";
+  return { key: userId || displayName, name: displayName };
 }
 
 function render(list) {
@@ -142,11 +162,13 @@ async function sendMessage() {
 }
 
 function showPeopleList() {
-  if (!joinedPeople.length) {
-    alert("No people joined yet.");
-    return;
-  }
-  alert(`People joined (${joinedPeople.length}):\n- ${joinedPeople.join("\n- ")}`);
+  loadRoomState(false).finally(() => {
+    if (!joinedPeople.length) {
+      alert("No people joined yet.");
+      return;
+    }
+    alert(`People joined (${joinedPeople.length}):\n- ${joinedPeople.join("\n- ")}`);
+  });
 }
 
 function decodeJwtPayload(jwt) {

@@ -214,7 +214,7 @@ async function apiRequest(path, options = {}) {
   if (text) { try { body = JSON.parse(text); } catch {} }
   if (!response.ok) {
     const message = typeof body === "string" ? body : (body?.error || JSON.stringify(body, null, 2));
-    const error = new Error(`Status: ${response.status}\n${message}`);
+    const error = new Error(message || `Request failed with status ${response.status}`);
     error.status = response.status;
     error.body = body;
     throw error;
@@ -298,7 +298,12 @@ async function loadParticipantsForVisibleRooms() {
 
 function formatParticipants(roomId) {
   const people = participantsByRoom.get(roomId);
-  if (people === null) return "Add password to view";
-  if (!people || people.length === 0) return "No messages yet";
-  return people.join(", ");
+  if (people === null) return "Open room to view live count";
+  if (!people || people.length === 0) return "No active people";
+
+  const names = people
+    .map(participant => typeof participant === "string" ? participant : (participant.displayName || participant.DisplayName || participant.userId || participant.UserId || "Chat user"))
+    .filter(Boolean);
+
+  return `${names.length} active${names.length ? `: ${names.join(", ")}` : ""}`;
 }

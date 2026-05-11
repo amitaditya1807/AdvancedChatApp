@@ -17,5 +17,7 @@ public interface IChatRoomService
 
     Task<ChatMessage> SendMessageAsync(Guid roomId, string userId, string senderName, string? password, SendMessageRequest request, CancellationToken cancellationToken = default);
 
-    Task<IReadOnlyCollection<string>> GetParticipantsAsync(Guid roomId, string? password, CancellationToken cancellationToken = default);
+    Task<IReadOnlyCollection<ChatParticipant>> GetParticipantsAsync(Guid roomId, string? password, CancellationToken cancellationToken = default);
+
+    Task TouchParticipantAsync(Guid roomId, string userId, string senderName, string? password, CancellationToken cancellationToken = default);
 }

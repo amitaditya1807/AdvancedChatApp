@@ -8,7 +8,7 @@ public sealed class InMemoryChatRoomRepository : IChatRoomRepository
 {
     private readonly ConcurrentDictionary<Guid, ChatRoom> _rooms = new();
     private readonly ConcurrentDictionary<Guid, ConcurrentQueue<ChatMessage>> _messages = new();
-    private readonly ConcurrentDictionary<Guid, ConcurrentDictionary<string, string>> _participants = new();
+    private readonly ConcurrentDictionary<Guid, ConcurrentDictionary<string, ChatParticipantPresence>> _participants = new();
 
     public InMemoryChatRoomRepository()
     {
@@ -23,7 +23,7 @@ public sealed class InMemoryChatRoomRepository : IChatRoomRepository
 
         _rooms[generalRoom.Id] = generalRoom;
         _messages[generalRoom.Id] = new ConcurrentQueue<ChatMessage>();
-        _participants[generalRoom.Id] = new ConcurrentDictionary<string, string>();
+        _participants[generalRoom.Id] = new ConcurrentDictionary<string, ChatParticipantPresence>();
     }
 
     public Task<IReadOnlyCollection<ChatRoom>> GetRoomsAsync(string userId, CancellationToken cancellationToken = default)
@@ -55,7 +55,7 @@ public sealed class InMemoryChatRoomRepository : IChatRoomRepository
     {
         _rooms[room.Id] = room;
         _messages.TryAdd(room.Id, new ConcurrentQueue<ChatMessage>());
-        _participants.TryAdd(room.Id, new ConcurrentDictionary<string, string>());
+        _participants.TryAdd(room.Id, new ConcurrentDictionary<string, ChatParticipantPresence>());
 
         return Task.FromResult(room);
     }
@@ -102,35 +102,52 @@ public sealed class InMemoryChatRoomRepository : IChatRoomRepository
         return Task.FromResult(message);
     }
 
-    public Task AddParticipantAsync(Guid roomId, string userId, string displayName, CancellationToken cancellationToken = default)
+    public Task AddParticipantAsync(Guid roomId, string userId, string displayName, DateTime lastSeenUtc, CancellationToken cancellationToken = default)
     {
         if (!_rooms.ContainsKey(roomId))
         {
             throw new KeyNotFoundException($"Room '{roomId}' was not found.");
         }
 
+        var presence = new ChatParticipantPresence(displayName, lastSeenUtc);
+
         _participants
-            .GetOrAdd(roomId, _ => new ConcurrentDictionary<string, string>())
-            .AddOrUpdate(userId, displayName, (_, _) => displayName);
+            .GetOrAdd(roomId, _ => new ConcurrentDictionary<string, ChatParticipantPresence>())
+            .AddOrUpdate(userId, presence, (_, _) => presence);
 
         return Task.CompletedTask;
     }
 
-    public Task<IReadOnlyCollection<string>> GetParticipantsAsync(Guid roomId, CancellationToken cancellationToken = default)
+    public Task<IReadOnlyCollection<ChatParticipant>> GetParticipantsAsync(Guid roomId, DateTime activeAfterUtc, CancellationToken cancellationToken = default)
     {
         if (!_rooms.ContainsKey(roomId))
         {
-            return Task.FromResult<IReadOnlyCollection<string>>(Array.Empty<string>());
+            return Task.FromResult<IReadOnlyCollection<ChatParticipant>>(Array.Empty<ChatParticipant>());
         }
 
-        var participants = _participants
-            .GetOrAdd(roomId, _ => new ConcurrentDictionary<string, string>())
-            .Values
-            .Where(name => !string.IsNullOrWhiteSpace(name))
-            .Distinct(StringComparer.OrdinalIgnoreCase)
-            .OrderBy(name => name)
+        var participantMap = _participants
+            .GetOrAdd(roomId, _ => new ConcurrentDictionary<string, ChatParticipantPresence>());
+
+        foreach (var participant in participantMap)
+        {
+            if (participant.Value.LastSeenUtc < activeAfterUtc)
+            {
+                participantMap.TryRemove(participant.Key, out _);
+            }
+        }
+
+        var participants = participantMap
+            .Where(participant => participant.Value.LastSeenUtc >= activeAfterUtc && !string.IsNullOrWhiteSpace(participant.Value.DisplayName))
+            .Select(participant => new ChatParticipant(
+                participant.Key,
+                participant.Value.DisplayName,
+                participant.Value.LastSeenUtc))
+            .OrderBy(participant => participant.DisplayName)
+            .ThenBy(participant => participant.UserId)
             .ToArray();
 
-        return Task.FromResult<IReadOnlyCollection<string>>(participants);
+        return Task.FromResult<IReadOnlyCollection<ChatParticipant>>(participants);
     }
+
+    private sealed record ChatParticipantPresence(string DisplayName, DateTime LastSeenUtc);
 }

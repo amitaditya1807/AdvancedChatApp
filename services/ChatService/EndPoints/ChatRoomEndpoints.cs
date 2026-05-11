@@ -232,6 +232,40 @@ public static class ChatRoomEndpoints
             }
         });
 
+        group.MapPost("/{roomId:guid}/participants/heartbeat", async (
+            Guid roomId,
+            HttpContext context,
+            IChatRoomService chatRoomService,
+            CancellationToken cancellationToken) =>
+        {
+            var userId = GetUserId(context);
+
+            if (string.IsNullOrWhiteSpace(userId))
+            {
+                return Results.Unauthorized();
+            }
+
+            try
+            {
+                await chatRoomService.TouchParticipantAsync(
+                    roomId,
+                    userId,
+                    GetSenderName(context),
+                    GetRoomPassword(context),
+                    cancellationToken);
+
+                return Results.NoContent();
+            }
+            catch (KeyNotFoundException ex)
+            {
+                return Results.NotFound(new { error = ex.Message });
+            }
+            catch (UnauthorizedAccessException ex)
+            {
+                return Results.Json(new { error = ex.Message }, statusCode: StatusCodes.Status403Forbidden);
+            }
+        });
+
         group.MapGet("/{roomId:guid}/participants", async (
             Guid roomId,
             HttpContext context,
