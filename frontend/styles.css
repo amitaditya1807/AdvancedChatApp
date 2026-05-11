@@ -51,6 +51,28 @@ body {
   margin-bottom: 12px;
 }
 
+.top-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.session-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  border-radius: 999px;
+  font-size: 13px;
+  font-weight: 800;
+  white-space: nowrap;
+  border: 1px solid rgba(148, 163, 184, 0.2);
+}
+.session-pill.connected { color: #34d399; background: rgba(52, 211, 153, 0.12); }
+.session-pill.disconnected { color: var(--danger); background: rgba(251, 113, 133, 0.12); }
+
 .eyebrow {
   display: inline-flex;
   margin: 0 0 12px;
@@ -201,4 +223,6 @@ pre {
 
 @media (max-width: 860px) {
   .hero { grid-template-columns: 1fr; }
+  .hero-topline { align-items: flex-start; flex-direction: column; }
+  .top-actions { justify-content: flex-start; }
 }

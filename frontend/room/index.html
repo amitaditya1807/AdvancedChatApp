@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>ChatService</title>
+  <title>Room Service</title>
   <link rel="stylesheet" href="../styles.css" />
 </head>
 <body>
@@ -11,8 +11,11 @@
     <header class="hero panel">
       <div class="hero__left">
         <div class="hero-topline">
-          <p class="eyebrow">🏠 ChatService</p>
-          <button class="secondary compact" onclick="goHome()">← Home</button>
+          <p class="eyebrow">🏠 Room Service</p>
+          <div class="top-actions">
+            <div id="sessionPill" class="session-pill disconnected"><span class="dot"></span>Not signed in</div>
+            <button class="secondary compact" onclick="goHome()">← Home</button>
+          </div>
         </div>
         <h1>Rooms</h1>
         <p class="subtitle">Enter an existing Room ID/name + password to join. If the room does not exist, a new room will be created.</p>
@@ -21,31 +24,6 @@
           <input id="roomPasswordInput" type="password" placeholder="Room Password" onkeydown="handleRoomInputKey(event)" />
           <button id="enterRoomButton" class="primary" onclick="enterRoom()">Join / Create</button>
         </div>
-      </div>
-
-      <div class="hero__right status-grid">
-        <section class="status-card">
-          <div class="status-label">Session</div>
-          <div id="sessionText">Not signed in</div>
-          <div id="sessionBadge" class="badge"><span class="dot"></span>Disconnected</div>
-        </section>
-        <section class="status-card">
-          <div class="status-label">Gateway</div>
-          <div id="gatewayUrl">Loading...</div>
-        </section>
-        <section class="status-card">
-          <div class="status-label">JWT Preview</div>
-          <div id="tokenPreview" class="token-preview">No token stored</div>
-        </section>
-        <section class="status-card">
-          <div class="status-row">
-            <div class="status-label">JWT Expiry</div>
-            <div id="expiryBadge" class="expiry-badge">No token</div>
-          </div>
-          <div id="expiryText" class="expiry-time">Not available</div>
-          <div id="expiryMeta" class="expiry-meta">Sign in to see token lifetime and countdown.</div>
-          <div class="expiry-meter" aria-hidden="true"><div id="expiryProgress" class="expiry-meter-fill"></div></div>
-        </section>
       </div>
     </header>
 

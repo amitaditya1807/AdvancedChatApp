@@ -4,19 +4,11 @@ const TOKEN_KEY = "advanced_chat_jwt";
 const output = document.getElementById("output");
 const chatButton = document.getElementById("chatButton");
 const enterRoomButton = document.getElementById("enterRoomButton");
-const sessionText = document.getElementById("sessionText");
-const sessionBadge = document.getElementById("sessionBadge");
-const tokenPreview = document.getElementById("tokenPreview");
-const expiryBadge = document.getElementById("expiryBadge");
-const expiryText = document.getElementById("expiryText");
-const expiryMeta = document.getElementById("expiryMeta");
-const expiryProgress = document.getElementById("expiryProgress");
-const gatewayUrl = document.getElementById("gatewayUrl");
+const sessionPill = document.getElementById("sessionPill");
 const roomList = document.getElementById("roomList");
 const roomIdInput = document.getElementById("roomIdInput");
 const roomPasswordInput = document.getElementById("roomPasswordInput");
 
-gatewayUrl.textContent = API_GATEWAY_URL;
 
 let token = readTokenFromUrl() || localStorage.getItem(TOKEN_KEY) || "";
 let rooms = [];
@@ -50,28 +42,14 @@ function renderSession() {
 
   if (!enabled) {
     stopRoomPolling();
-    sessionText.textContent = "Not signed in";
-    sessionBadge.className = "badge";
-    sessionBadge.innerHTML = '<span class="dot"></span>Disconnected';
-    tokenPreview.textContent = "No token stored";
-    expiryBadge.className = "expiry-badge";
-    expiryBadge.textContent = "No token";
-    expiryText.textContent = "Not available";
-    expiryMeta.textContent = "Sign in to see token lifetime and countdown.";
-    expiryProgress.style.width = "0%";
+    sessionPill.className = "session-pill disconnected";
+    sessionPill.innerHTML = '<span class="dot"></span>Not signed in';
     roomList.innerHTML = '<div class="chat-empty">Sign in to load your rooms.</div>';
     return;
   }
 
-  sessionText.textContent = "JWT stored in this browser";
-  sessionBadge.className = "badge connected";
-  sessionBadge.innerHTML = '<span class="dot"></span>Connected';
-  tokenPreview.textContent = token.length > 34 ? `${token.slice(0, 18)}...${token.slice(-12)}` : token;
-  expiryBadge.className = "expiry-badge active";
-  expiryBadge.textContent = "Active";
-  expiryText.textContent = "Session active";
-  expiryMeta.textContent = "JWT is available for authenticated room actions.";
-  expiryProgress.style.width = "100%";
+  sessionPill.className = "session-pill connected";
+  sessionPill.innerHTML = '<span class="dot"></span>Logged in · Session active';
 
   loadRooms();
   startRoomPolling();
@@ -155,15 +133,23 @@ function renderRooms() {
     return;
   }
 
-  roomList.innerHTML = myRooms.map(room => `
-    <div class="room-card">
-      <button class="room-item" onclick="openExistingRoom('${room.id}','${escapeHtml(room.name)}')">
-        <span class="room-name">${escapeHtml(room.name)}</span>
-        <span class="room-meta">Room ID: ${escapeHtml(room.id)}</span>
-        <span class="room-meta">People: ${formatParticipants(room.id)}</span>
-      </button>
-      <button class="danger room-delete" onclick="deleteRoom('${room.id}')">Delete</button>
-    </div>`).join("");
+  roomList.innerHTML = myRooms.map(room => {
+    const roomId = getRoomId(room);
+    const roomName = getRoomName(room);
+    const deleteButton = isRoomOwner(room)
+      ? `<button class="danger room-delete" onclick="deleteRoom('${roomId}')">Delete</button>`
+      : "";
+
+    return `
+      <div class="room-card">
+        <button class="room-item" onclick="openExistingRoom('${roomId}','${escapeHtml(roomName)}')">
+          <span class="room-name">${escapeHtml(roomName)}</span>
+          <span class="room-meta">Room ID: ${escapeHtml(roomId)}</span>
+          <span class="room-meta">People: ${formatParticipants(roomId)}</span>
+        </button>
+        ${deleteButton}
+      </div>`;
+  }).join("");
 }
 
 async function openExistingRoom(roomId, roomName) {
@@ -189,6 +175,12 @@ async function joinRoom(roomKey, password) {
 
 async function deleteRoom(roomId) {
   if (!ensureSignedIn()) return;
+  const room = rooms.find(r => getRoomId(r) === roomId);
+  if (room && !isRoomOwner(room)) {
+    output.textContent = "❌ Only the room owner can delete this room.";
+    return;
+  }
+
   try {
     await apiRequest(`/chat/rooms/${roomId}`, { method: "DELETE" });
     rooms = rooms.filter(r => r.id !== roomId);
@@ -263,8 +255,21 @@ function upsertRoom(roomList, room) {
 }
 
 function getCreatedRoomsForCurrentUser() {
+  return rooms.filter(isRoomOwner);
+}
+
+function isRoomOwner(room) {
   const currentUserId = getCurrentUserId();
-  return rooms.filter(room => room.createdByUserId === currentUserId);
+  const createdByUserId = room?.createdByUserId || room?.CreatedByUserId || "";
+  return Boolean(currentUserId && createdByUserId && createdByUserId === currentUserId);
+}
+
+function getRoomId(room) {
+  return room?.id || room?.Id || "";
+}
+
+function getRoomName(room) {
+  return room?.name || room?.Name || "Room";
 }
 
 function getRoomPassword(roomId) {
@@ -299,25 +304,23 @@ function clearOutput() { output.textContent = "Ready."; }
 
 async function loadParticipantsForVisibleRooms() {
   await Promise.all(getCreatedRoomsForCurrentUser().map(async (room) => {
-    const password = getRoomPassword(room.id);
-    if (!password) {
-      participantsByRoom.set(room.id, null);
-      return;
-    }
+    const roomId = getRoomId(room);
+    const password = getRoomPassword(roomId);
+
     try {
-      const participants = await apiRequest(`/chat/rooms/${room.id}/participants`, {
-        headers: { "X-Room-Password": password }
+      const participants = await apiRequest(`/chat/rooms/${roomId}/participants`, {
+        headers: password ? { "X-Room-Password": password } : {}
       });
-      participantsByRoom.set(room.id, participants || []);
+      participantsByRoom.set(roomId, participants || []);
     } catch {
-      participantsByRoom.set(room.id, null);
+      participantsByRoom.set(roomId, null);
     }
   }));
 }
 
 function formatParticipants(roomId) {
   const people = participantsByRoom.get(roomId);
-  if (people === null) return "Open room to view live count";
+  if (people === null) return "Live count unavailable";
   if (!people || people.length === 0) return "No active people";
 
   const names = people

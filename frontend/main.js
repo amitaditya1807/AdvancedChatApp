@@ -4,12 +4,7 @@ const TOKEN_KEY = "advanced_chat_jwt";
 const output = document.getElementById("output");
 const chatButton = document.getElementById("chatButton");
 const roomServiceButton = document.getElementById("roomServiceButton");
-const sessionText = document.getElementById("sessionText");
-const sessionBadge = document.getElementById("sessionBadge");
-const tokenPreview = document.getElementById("tokenPreview");
-const gatewayUrl = document.getElementById("gatewayUrl");
-
-gatewayUrl.textContent = API_GATEWAY_URL;
+const sessionPill = document.getElementById("sessionPill");
 
 const authRequired = new URLSearchParams(window.location.search).get("authRequired");
 
@@ -37,18 +32,14 @@ function removeTokenFromUrl() {
 
 function renderSession() {
   if (!token) {
-    sessionText.textContent = "Not signed in";
-    sessionBadge.className = "badge";
-    sessionBadge.innerHTML = '<span class="dot"></span>Disconnected';
-    tokenPreview.textContent = "No token stored";
+    sessionPill.className = "session-pill disconnected";
+    sessionPill.innerHTML = '<span class="dot"></span>Not signed in';
     roomServiceButton.disabled = true;
     return;
   }
 
-  sessionText.textContent = "JWT stored in this browser";
-  sessionBadge.className = "badge connected";
-  sessionBadge.innerHTML = '<span class="dot"></span>Connected';
-  tokenPreview.textContent = token.length > 34 ? `${token.slice(0, 18)}...${token.slice(-12)}` : token;
+  sessionPill.className = "session-pill connected";
+  sessionPill.innerHTML = '<span class="dot"></span>Logged in · Session active';
   roomServiceButton.disabled = false;
 }
 
