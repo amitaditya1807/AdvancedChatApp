@@ -1,0 +1,99 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Cloud Storage Service</title>
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <main class="shell">
+      <section class="topbar">
+        <div>
+          <p class="eyebrow">ChatApp</p>
+          <h1>Cloud Storage</h1>
+        </div>
+        <div class="status" id="serviceStatus">Checking service...</div>
+      </section>
+
+      <section class="panel auth-panel">
+        <label for="apiBase">API base URL</label>
+        <div class="row">
+          <input id="apiBase" value="http://localhost:8082" />
+          <button id="saveApiButton" type="button">Save</button>
+        </div>
+
+        <label for="jwtToken">Auth service JWT</label>
+        <textarea id="jwtToken" rows="5" placeholder="Paste JWT from Auth service"></textarea>
+        <div class="actions">
+          <button id="saveTokenButton" type="button">Save Token</button>
+          <button id="clearTokenButton" class="secondary" type="button">Clear</button>
+        </div>
+      </section>
+
+      <section class="grid">
+        <div class="panel quota-panel">
+          <div class="section-heading">
+            <h2>Drive Usage</h2>
+            <button id="refreshQuotaButton" type="button">Refresh</button>
+          </div>
+          <div class="meter">
+            <div id="quotaBar"></div>
+          </div>
+          <div class="quota-grid">
+            <div>
+              <span>Total</span>
+              <strong id="quotaTotal">-</strong>
+            </div>
+            <div>
+              <span>Used</span>
+              <strong id="quotaUsed">-</strong>
+            </div>
+            <div>
+              <span>Drive</span>
+              <strong id="quotaDrive">-</strong>
+            </div>
+          </div>
+        </div>
+
+        <div class="panel upload-panel">
+          <div class="section-heading">
+            <h2>Upload</h2>
+          </div>
+          <input id="fileInput" type="file" />
+          <button id="uploadButton" type="button">Upload File</button>
+          <p class="hint" id="uploadHint">Maximum upload size is 25 MB.</p>
+        </div>
+      </section>
+
+      <section class="panel files-panel">
+        <div class="section-heading">
+          <h2>Files</h2>
+          <button id="refreshFilesButton" type="button">Refresh</button>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Name</th>
+                <th>Type</th>
+                <th>Size</th>
+                <th>Modified</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody id="filesBody">
+              <tr>
+                <td colspan="5" class="empty">No files loaded yet.</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <div id="toast" class="toast" hidden></div>
+    </main>
+
+    <script src="./app.js"></script>
+  </body>
+</html>

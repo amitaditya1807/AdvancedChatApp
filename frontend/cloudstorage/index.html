@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CloudStorage</title>
+  <link rel="stylesheet" href="../styles.css" />
+  <link rel="stylesheet" href="./cloudstorage.css" />
+</head>
+<body>
+  <main class="page">
+    <header class="hero panel cloud-hero">
+      <div class="hero__left">
+        <div class="hero-topline">
+          <p class="eyebrow">CloudStorage</p>
+          <div class="top-actions">
+            <div id="sessionPill" class="session-pill disconnected"><span class="dot"></span>Not signed in</div>
+            <button class="secondary compact" onclick="goHome()">Home</button>
+          </div>
+        </div>
+        <h1>Files</h1>
+        <p class="subtitle">Upload, download, and remove files from your cloud storage. Your existing browser session is used automatically.</p>
+      </div>
+
+      <div class="status-grid">
+        <div class="status-card">
+          <div class="status-label">Service</div>
+          <div id="serviceStatus" class="badge"><span class="dot"></span>Checking</div>
+        </div>
+        <div class="status-card">
+          <div class="status-label">API Base</div>
+          <div class="api-base-row">
+            <input id="apiBaseInput" type="text" />
+            <button id="saveApiButton" class="secondary compact" type="button">Save</button>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <section class="panel chat-card storage-grid">
+      <div class="quota-panel">
+        <div class="section-title">
+          <h2>Drive Usage</h2>
+          <button id="refreshQuotaButton" class="secondary compact" type="button">Refresh</button>
+        </div>
+        <div class="meter"><div id="quotaBar"></div></div>
+        <div class="quota-grid">
+          <div>
+            <span>Total</span>
+            <strong id="quotaTotal">-</strong>
+          </div>
+          <div>
+            <span>Used</span>
+            <strong id="quotaUsed">-</strong>
+          </div>
+          <div>
+            <span>Drive</span>
+            <strong id="quotaDrive">-</strong>
+          </div>
+        </div>
+      </div>
+
+      <div class="upload-panel">
+        <div class="section-title"><h2>Upload</h2></div>
+        <input id="fileInput" type="file" />
+        <button id="uploadButton" class="primary" type="button">Upload File</button>
+        <p id="uploadHint" class="hint">Maximum upload size is 25 MB.</p>
+      </div>
+    </section>
+
+    <section class="panel chat-card">
+      <div class="section-title">
+        <h2>Your Files</h2>
+        <button id="refreshFilesButton" class="secondary compact" type="button">Refresh</button>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Name</th>
+              <th>Type</th>
+              <th>Size</th>
+              <th>Modified</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody id="filesBody">
+            <tr><td colspan="5" class="empty">No files loaded yet.</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="panel output-card">
+      <div class="section-title">
+        <h2>Output</h2>
+        <button class="secondary compact" onclick="clearOutput()">Clear</button>
+      </div>
+      <pre id="output">Ready.</pre>
+    </section>
+  </main>
+
+  <div id="toast" class="toast" hidden></div>
+  <script src="./cloudstorage.js"></script>
+</body>
+</html>

@@ -4,6 +4,7 @@ const TOKEN_KEY = "advanced_chat_jwt";
 const output = document.getElementById("output");
 const chatButton = document.getElementById("chatButton");
 const roomServiceButton = document.getElementById("roomServiceButton");
+const cloudStorageButton = document.getElementById("cloudStorageButton");
 const sessionPill = document.getElementById("sessionPill");
 
 const authRequired = new URLSearchParams(window.location.search).get("authRequired");
@@ -18,6 +19,9 @@ renderSession();
 
 if (authRequired === "room" && !token) {
   output.textContent = "❌ Please sign in with Google before opening Room Service.";
+}
+if (authRequired === "cloudstorage" && !token) {
+  output.textContent = "❌ Please sign in with Google before opening CloudStorage.";
 }
 
 function readTokenFromUrl() {
@@ -35,12 +39,14 @@ function renderSession() {
     sessionPill.className = "session-pill disconnected";
     sessionPill.innerHTML = '<span class="dot"></span>Not signed in';
     roomServiceButton.disabled = true;
+    cloudStorageButton.disabled = true;
     return;
   }
 
   sessionPill.className = "session-pill connected";
   sessionPill.innerHTML = '<span class="dot"></span>Logged in · Session active';
   roomServiceButton.disabled = false;
+  cloudStorageButton.disabled = false;
 }
 
 function login() {
@@ -54,6 +60,15 @@ function openRoomService() {
   }
 
   window.location.href = "./room/index.html";
+}
+
+function openCloudStorage() {
+  if (!token) {
+    output.textContent = "❌ Please sign in with Google before opening CloudStorage.";
+    return;
+  }
+
+  window.location.href = "./cloudstorage/index.html";
 }
 
 async function callChatService() {
