@@ -1,6 +1,6 @@
 const TOKEN_KEY = "advanced_chat_jwt";
 const API_BASE_KEY = "cloudStorage.apiBase";
-const DEFAULT_API_BASE = "https://cloudstorageservice.onrender.com";
+const DEFAULT_API_BASE = "https://apigateway1-khy4.onrender.com/cloudstorage";
 
 const elements = {
   sessionPill: document.getElementById("sessionPill"),
